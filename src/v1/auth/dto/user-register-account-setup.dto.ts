@@ -1,3 +1,4 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsEmail,
   IsIn,
@@ -12,25 +13,30 @@ import {
 export class UserRegisterAccountSetupDto {
   @IsOptional()
   @IsEmail({}, { message: 'Please provide a valid email address' })
+  @ApiPropertyOptional()
   email?: string;
 
   @IsString({ message: 'Full name must be a string' })
   @IsNotEmpty({ message: 'Full name is required' })
   @MinLength(2, { message: 'Full name must be at least 2 characters long' })
   @MaxLength(100, { message: 'Full name must not exceed 100 characters' })
+  @ApiProperty()
   fullName!: string;
 
   @IsString({ message: 'User ID must be a string' })
   @IsUUID('4', { message: 'User ID must be a valid UUID v4' })
   @IsNotEmpty({ message: 'User ID is required' })
+  @ApiProperty()
   userId!: string;
 
   @IsString({ message: 'Date of birth must be a string' })
+  @ApiProperty()
   dateOfBirth!: string;
 
   @IsOptional()
   @IsString({ message: 'Gender must be a string' })
   @IsIn(['male', 'female'], { message: 'Gender must be either male or female' })
+  @ApiPropertyOptional({ enum: ['male', 'female'] })
   gender?: string;
 
   @IsOptional()
@@ -38,13 +44,16 @@ export class UserRegisterAccountSetupDto {
   @IsIn(['myanmar', 'english'], {
     message: 'Preferred language must be myanmar or english',
   })
+  @ApiPropertyOptional({ enum: ['myanmar', 'english'] })
   preferLanguage?: string;
 
   @IsOptional()
   @IsString({ message: 'Profile image URL must be a string' })
+  @ApiPropertyOptional()
   profileImageUrl?: string;
 
   @IsOptional()
   @IsString({ message: 'FCM token must be a string' })
+  @ApiPropertyOptional()
   fcmToken?: string;
 }

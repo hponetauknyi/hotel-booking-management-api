@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import {
   IsNotEmpty,
   IsString,
@@ -9,6 +10,7 @@ import {
 export class ResetPasswordDto {
   @IsString({ message: 'Access Token must be a string' })
   @IsNotEmpty({ message: 'Access Token is required' })
+  @ApiProperty()
   accessToken!: string;
 
   @IsString({ message: 'New password must be a string' })
@@ -19,5 +21,6 @@ export class ResetPasswordDto {
     message:
       'New password must contain at least one uppercase letter and one number',
   })
+  @ApiProperty()
   newPassword!: string;
 }

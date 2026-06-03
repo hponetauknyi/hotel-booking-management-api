@@ -1,3 +1,4 @@
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsOptional, IsString, IsBoolean } from 'class-validator';
 import { PaginationFilterDto } from 'src/common/dto/pagination-filter.dto';
@@ -5,6 +6,7 @@ import { PaginationFilterDto } from 'src/common/dto/pagination-filter.dto';
 export class FilterUserDto extends PaginationFilterDto {
   @IsOptional()
   @IsString({ message: 'Search must be a string' })
+  @ApiPropertyOptional()
   search?: string;
 
   @IsOptional()
@@ -15,13 +17,16 @@ export class FilterUserDto extends PaginationFilterDto {
     if (value === 'false' || value === '0' || value === false) return false;
     return undefined;
   })
+  @ApiPropertyOptional()
   isBanned?: boolean;
 
   @IsOptional()
   @IsString()
+  @ApiPropertyOptional()
   startDate?: string;
 
   @IsOptional()
   @IsString()
+  @ApiPropertyOptional()
   endDate?: string;
 }

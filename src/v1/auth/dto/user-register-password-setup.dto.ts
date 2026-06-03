@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import {
   IsNotEmpty,
   IsString,
@@ -16,6 +17,7 @@ export class UserRegisterPasswordSetupDto {
     message:
       'Password must contain at least one uppercase letter and one number',
   })
+  @ApiProperty()
   password!: string;
 
   @IsString({ message: 'Confirm password must be a string' })
@@ -26,10 +28,12 @@ export class UserRegisterPasswordSetupDto {
   @MaxLength(128, {
     message: 'Confirm password must not exceed 128 characters',
   })
+  @ApiProperty()
   confirmPassword!: string;
 
   @IsString({ message: 'User ID must be a string' })
   @IsUUID('4', { message: 'User ID must be a valid UUID' })
   @IsNotEmpty({ message: 'User ID is required' })
+  @ApiProperty()
   userId!: string;
 }

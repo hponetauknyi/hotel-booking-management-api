@@ -1,3 +1,4 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
   IsEmail,
@@ -14,19 +15,23 @@ export class CreateAdminDto {
   @IsNotEmpty({ message: 'Full name is required' })
   @MinLength(2, { message: 'Full name must be at least 2 characters long' })
   @MaxLength(100, { message: 'Full name must not exceed 100 characters' })
+  @ApiProperty()
   fullName!: string;
 
   @IsEmail({}, { message: 'Please provide a valid email address' })
   @IsNotEmpty({ message: 'Email is required' })
+  @ApiProperty()
   email!: string;
 
   @IsOptional()
   @IsString({ message: 'Password must be a string' })
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
+  @ApiPropertyOptional()
   password?: string;
 
   @IsUUID('4', { message: 'Role ID must be a valid UUID' })
   @IsNotEmpty({ message: 'Role ID is required' })
+  @ApiProperty()
   roleId!: string;
 
   @IsOptional()
@@ -36,9 +41,11 @@ export class CreateAdminDto {
     if (value === 'false' || value === '0' || value === false) return false;
     return undefined;
   })
+  @ApiPropertyOptional()
   isBanned?: boolean;
 
   @IsOptional()
   @IsString({ message: 'Profile image URL must be a string' })
+  @ApiPropertyOptional()
   profileImageUrl?: string;
 }
