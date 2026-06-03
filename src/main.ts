@@ -17,6 +17,7 @@ import { DatabaseExceptionFilter } from './common/filters/database-exception.fil
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ThrottlerExceptionFilter } from './common/filters/throttler-exception.filter';
 import { TimeoutInterceptor } from './common/interceptors/timeout.interceptor';
+import { SwaggerConfig } from './common/config/swagger.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -124,6 +125,8 @@ async function bootstrap() {
 
   // Enable graceful shutdown — triggers OnModuleDestroy across all modules
   app.enableShutdownHooks();
+
+  SwaggerConfig(app);
 
   const port = configService.get<number>('PORT', 3000);
   const server = await app.listen(port);

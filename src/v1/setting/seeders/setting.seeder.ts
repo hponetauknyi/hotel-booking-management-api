@@ -40,7 +40,10 @@ export class SettingSeeder {
       },
       {
         key: 'smtp_from_name',
-        value: this.configService.get<string>('SMTP_FROM_NAME', 'NestJS TypeORM API Starter'),
+        value: this.configService.get<string>(
+          'SMTP_FROM_NAME',
+          'NestJS TypeORM API Starter',
+        ),
       },
       {
         key: 'smtp_enabled',
