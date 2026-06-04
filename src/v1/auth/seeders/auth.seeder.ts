@@ -62,6 +62,18 @@ export class AuthSeeder {
         rank: 1,
         modules: moduleAccess,
       },
+      {
+        name: 'Admin',
+        description: 'Administrator role with access to most features',
+        rank: 2,
+        modules: moduleAccess,
+      },
+      {
+        name: 'Customer',
+        description: 'Customer role with access to public features',
+        rank: 3,
+        modules: {},
+      },
     ];
   }
 
@@ -181,10 +193,19 @@ export class AuthSeeder {
 
     // Super Admin user
     const superAdminRole = createdRoles.find((r) => r.name === 'Super Admin');
-    await this.createSuperAdmin(superAdminRole!);
+    if (superAdminRole) {
+      await this.createSuperAdmin(superAdminRole);
+    }
 
-    // Normal user
-    await this.createNormalUser();
+    const adminRole = createdRoles.find((r) => r.name === 'Admin');
+    if (adminRole) {
+      await this.createAdminUser(adminRole);
+    }
+
+    const customerRole = createdRoles.find((r) => r.name === 'Customer');
+    if (customerRole) {
+      await this.createCustomerUser(customerRole);
+    }
   }
 
   private async createRole(name: string, description: string): Promise<Role> {
@@ -259,16 +280,32 @@ export class AuthSeeder {
     }
   }
 
-  private async createNormalUser(): Promise<void> {
-    const email = 'suthinzar@obs.com.mm';
+  private async createAdminUser(role: Role): Promise<void> {
+    const email = 'admin@obs.com.mm';
+    const existing = await this.adminRepository.findOne({ where: { email } });
+    if (!existing) {
+      await this.adminRepository.save(
+        this.adminRepository.create({
+          email,
+          fullName: 'Admin',
+          roleId: role.id,
+          password: 'passwordD123!@#',
+        }),
+      );
+    }
+  }
+
+  private async createCustomerUser(role: Role): Promise<void> {
+    const email = 'customer@obs.com.mm';
     const existing = await this.userRepository.findOne({ where: { email } });
     if (!existing) {
       await this.userRepository.save(
         this.userRepository.create({
           email,
-          fullName: 'Suthinzar',
+          fullName: 'Customer',
           phone: '095085730',
           registrationStage: UserRegistrationStage.COMPLETED,
+          roleId: role.id,
           password: 'passwordD123!@#',
         }),
       );

@@ -2,6 +2,7 @@ import { Exclude } from 'class-transformer';
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { hashPasswordIfNeeded } from 'src/common/utils/password-hash.util';
 import { RefreshToken } from 'src/v1/auth/entities/refresh-token.entity';
+import { Role } from 'src/v1/auth/entities/role.entity';
 import { OtpRecord } from 'src/v1/otp/entities/otp-record.entity';
 import {
   BeforeInsert,
@@ -9,6 +10,8 @@ import {
   Column,
   Entity,
   Index,
+  JoinColumn,
+  ManyToOne,
   OneToMany,
 } from 'typeorm';
 
@@ -93,6 +96,13 @@ export class User extends BaseEntity {
 
   @Column({ type: 'varchar', nullable: true })
   loginProvider?: LoginProvider;
+
+  @Column()
+  roleId!: string;
+
+  @ManyToOne(() => Role, undefined, { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'roleId' })
+  role!: Role;
 
   @BeforeInsert()
   @BeforeUpdate()
