@@ -9,6 +9,8 @@ import { Permission } from '../v1/auth/entities/permission.entity';
 import { RolePermission } from '../v1/auth/entities/role-permission.entity';
 import { Role } from '../v1/auth/entities/role.entity';
 import { AuthSeeder } from '../v1/auth/seeders/auth.seeder';
+import { Hotel } from '../v1/hotel/entities/hotel.entity';
+import { HotelSeeder } from '../v1/hotel/seeders/hotel.seeder';
 import { Setting } from '../v1/setting/entities/setting.entity';
 import { SettingSeeder } from '../v1/setting/seeders/setting.seeder';
 import { User } from '../v1/user/entities/user.entity';
@@ -31,10 +33,11 @@ import { User } from '../v1/user/entities/user.entity';
       Permission,
       Role,
       RolePermission,
+      Hotel,
       Setting,
       User,
     ]),
   ],
-  providers: [AuthSeeder, SettingSeeder],
+  providers: [AuthSeeder, HotelSeeder, SettingSeeder],
 })
 export class SeederModule {}

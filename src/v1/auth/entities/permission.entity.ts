@@ -31,6 +31,9 @@ export enum PermissionModule {
   LOGS = 'LOGS',
   ACTIVITY_LOGS = 'ACTIVITY_LOGS',
   AUDIT_LOGS = 'AUDIT_LOGS',
+
+  HOTELS = 'HOTELS',
+  HOTEL_LIST = 'HOTEL_LIST',
 }
 
 @Entity('permissions')

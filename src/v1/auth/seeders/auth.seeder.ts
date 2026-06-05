@@ -52,27 +52,42 @@ export class AuthSeeder {
       (value) => typeof value === 'string',
     ) as ActionType[];
 
-    const moduleAccess = Object.fromEntries(
+    const allModuleAccess = Object.fromEntries(
       allModules.map((module) => [module, allPermissions]),
+    );
+    const adminModuleAccess = Object.fromEntries(
+      allModules
+        .filter(
+          (module) =>
+            ![
+              PermissionModule.ADMIN,
+              PermissionModule.ADMIN_LIST,
+              PermissionModule.ADMIN_ROLE_PERMISSIONS,
+            ].includes(module as PermissionModule),
+        )
+        .map((module) => [module, allPermissions]),
     );
     return [
       {
         name: 'Super Admin',
         description: 'Super Administrator role with full access',
         rank: 1,
-        modules: moduleAccess,
+        modules: allModuleAccess,
       },
       {
         name: 'Admin',
         description: 'Administrator role with access to most features',
         rank: 2,
-        modules: moduleAccess,
+        modules: adminModuleAccess,
       },
       {
         name: 'Customer',
         description: 'Customer role with access to public features',
         rank: 3,
-        modules: {},
+        modules: {
+          [PermissionModule.HOTELS]: [ActionType.READ],
+          [PermissionModule.HOTEL_LIST]: [ActionType.READ],
+        },
       },
     ];
   }
@@ -124,6 +139,16 @@ export class AuthSeeder {
           {
             name: 'Audit Logs',
             code: PermissionModule.AUDIT_LOGS,
+          },
+        ],
+      },
+      {
+        name: 'Hotels',
+        code: PermissionModule.HOTELS,
+        children: [
+          {
+            name: 'Hotel List',
+            code: PermissionModule.HOTEL_LIST,
           },
         ],
       },
