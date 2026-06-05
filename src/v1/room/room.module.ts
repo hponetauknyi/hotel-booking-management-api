@@ -9,6 +9,7 @@ import { RoomType } from './entities/room-type.entity';
 import { Room } from './entities/room.entity';
 import { RoomTypeService } from './services/room-type.service';
 import { RoomService } from './services/room.service';
+import { RoomCharacteristicController } from './controllers/room-characteristic.controller';
 
 @Module({
   imports: [
@@ -20,7 +21,11 @@ import { RoomService } from './services/room.service';
       Hotel,
     ]),
   ],
-  controllers: [RoomController, RoomTypeController],
+  controllers: [
+    RoomController,
+    RoomTypeController,
+    RoomCharacteristicController,
+  ],
   providers: [RoomService, RoomTypeService],
   exports: [RoomService, RoomTypeService],
 })

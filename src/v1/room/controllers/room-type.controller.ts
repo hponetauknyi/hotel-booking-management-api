@@ -49,12 +49,6 @@ export class RoomTypeController {
     return this.roomTypeService.findAllByHotel(hotelId);
   }
 
-  @Get('characteristics')
-  @Public()
-  async findAllCharacteristics() {
-    return this.roomTypeService.findAllCharacteristics();
-  }
-
   @Patch(':id')
   @LogActivity({
     action: LogAction.UPDATE,
