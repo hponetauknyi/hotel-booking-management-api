@@ -1,9 +1,9 @@
-import { AuditEntity } from 'src/common/entities/audit.entity';
 import { RoomTypeCharacteristic } from './room-type-characteristic.entity';
 import { Column, Entity, OneToMany } from 'typeorm';
+import { BaseEntity } from 'src/common/entities/base.entity';
 
 @Entity('room_characteristics')
-export class RoomCharacteristic extends AuditEntity {
+export class RoomCharacteristic extends BaseEntity {
   @Column()
   name!: string;
 

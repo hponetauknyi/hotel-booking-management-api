@@ -8,6 +8,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Relation,
 } from 'typeorm';
 
 @Entity('room_type_characteristics')
@@ -29,7 +30,7 @@ export class RoomTypeCharacteristic {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'roomTypeId' })
-  roomType!: RoomType;
+  roomType!: Relation<RoomType>;
 
   @ManyToOne(
     () => RoomCharacteristic,

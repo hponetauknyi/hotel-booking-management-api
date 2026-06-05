@@ -1,12 +1,19 @@
-import { AuditEntity } from 'src/common/entities/audit.entity';
 import { Hotel } from 'src/v1/hotel/entities/hotel.entity';
 import { Room } from './room.entity';
 import { RoomTypeCharacteristic } from './room-type-characteristic.entity';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  Relation,
+} from 'typeorm';
 import { RateOption } from 'src/v1/rate-option/entities/rate-option.entity';
+import { BaseEntity } from 'src/common/entities/base.entity';
 
 @Entity('room_types')
-export class RoomType extends AuditEntity {
+export class RoomType extends BaseEntity {
   @Column({ type: 'uuid' })
   hotelId!: string;
 
@@ -27,7 +34,7 @@ export class RoomType extends AuditEntity {
 
   @ManyToOne(() => Hotel, (hotel) => hotel.roomTypes, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'hotelId' })
-  hotel!: Hotel;
+  hotel!: Relation<Hotel>;
 
   @OneToMany(() => Room, (room) => room.roomType)
   rooms!: Room[];

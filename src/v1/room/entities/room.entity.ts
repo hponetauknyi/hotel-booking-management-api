@@ -1,4 +1,3 @@
-import { AuditEntity } from 'src/common/entities/audit.entity';
 import { Hotel } from 'src/v1/hotel/entities/hotel.entity';
 import { RoomType } from './room-type.entity';
 import {
@@ -8,8 +7,10 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
+  Relation,
 } from 'typeorm';
 import { BookingRoom } from 'src/v1/booking/entities/booking-room.entity';
+import { BaseEntity } from 'src/common/entities/base.entity';
 
 export enum RoomStatus {
   AVAILABLE = 'AVAILABLE',
@@ -20,7 +21,7 @@ export enum RoomStatus {
 
 @Entity('rooms')
 @Index(['hotelId', 'roomNumber'], { unique: true })
-export class Room extends AuditEntity {
+export class Room extends BaseEntity {
   @Column({ type: 'uuid' })
   hotelId!: string;
 
@@ -38,13 +39,13 @@ export class Room extends AuditEntity {
 
   @ManyToOne(() => Hotel, (hotel) => hotel.rooms, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'hotelId' })
-  hotel!: Hotel;
+  hotel!: Relation<Hotel>;
 
   @ManyToOne(() => RoomType, (roomType) => roomType.rooms, {
     onDelete: 'RESTRICT',
   })
   @JoinColumn({ name: 'roomTypeId' })
-  roomType!: RoomType;
+  roomType!: Relation<RoomType>;
 
   @OneToMany(() => BookingRoom, (bookingRoom) => bookingRoom.room)
   bookingRooms!: BookingRoom[];

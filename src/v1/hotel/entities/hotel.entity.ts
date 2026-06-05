@@ -1,13 +1,19 @@
-import { AuditEntity } from 'src/common/entities/audit.entity';
+import { BaseEntity } from 'src/common/entities/base.entity';
 import { Admin } from 'src/v1/admin/entities/admin.entity';
 import { RoomType } from 'src/v1/room/entities/room-type.entity';
 import { Room } from 'src/v1/room/entities/room.entity';
-// import { RoomType } from 'src/v1/room/entities/room-type.entity';
-// import { Room } from 'src/v1/room/entities/room.entity';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  Relation,
+} from 'typeorm';
 
 @Entity('hotels')
-export class Hotel extends AuditEntity {
+export class Hotel extends BaseEntity {
   @Column()
   name!: string;
 
@@ -46,7 +52,7 @@ export class Hotel extends AuditEntity {
 
   @ManyToOne(() => Admin, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'createdBy' })
-  createdByAdmin!: Admin;
+  createdByAdmin!: Relation<Admin>;
 
   @OneToMany(() => RoomType, (roomType) => roomType.hotel)
   roomTypes!: RoomType[];

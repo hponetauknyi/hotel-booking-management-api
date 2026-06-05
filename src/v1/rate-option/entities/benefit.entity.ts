@@ -1,9 +1,9 @@
-import { AuditEntity } from 'src/common/entities/audit.entity';
 import { RateOptionBenefit } from './rate-option-benefit.entity';
 import { Column, Entity, OneToMany } from 'typeorm';
+import { BaseEntity } from 'src/common/entities/base.entity';
 
 @Entity('benefits')
-export class Benefit extends AuditEntity {
+export class Benefit extends BaseEntity {
   @Column()
   name!: string;
 

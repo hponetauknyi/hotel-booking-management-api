@@ -8,6 +8,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Relation,
 } from 'typeorm';
 
 @Entity('booking_rooms')
@@ -50,7 +51,7 @@ export class BookingRoom {
 
   @ManyToOne(() => Room, (room) => room.bookingRooms, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'roomId' })
-  room!: Room;
+  room!: Relation<Room>;
 
   @ManyToOne(() => RateOption, (rateOption) => rateOption.bookingRooms, {
     onDelete: 'RESTRICT',

@@ -1,8 +1,15 @@
-import { AuditEntity } from 'src/common/entities/audit.entity';
 import { RoomType } from 'src/v1/room/entities/room-type.entity';
 import { RateOptionBenefit } from './rate-option-benefit.entity';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  Relation,
+} from 'typeorm';
 import { BookingRoom } from 'src/v1/booking/entities/booking-room.entity';
+import { BaseEntity } from 'src/common/entities/base.entity';
 
 export enum CancellationPolicy {
   FREE_CANCELLATION = 'FREE_CANCELLATION',
@@ -22,7 +29,7 @@ export enum Currency {
 }
 
 @Entity('rate_options')
-export class RateOption extends AuditEntity {
+export class RateOption extends BaseEntity {
   @Column({ type: 'uuid' })
   roomTypeId!: string;
 
@@ -51,7 +58,7 @@ export class RateOption extends AuditEntity {
     onDelete: 'RESTRICT',
   })
   @JoinColumn({ name: 'roomTypeId' })
-  roomType!: RoomType;
+  roomType!: Relation<RoomType>;
 
   @OneToMany(
     () => RateOptionBenefit,

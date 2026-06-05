@@ -8,6 +8,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Relation,
 } from 'typeorm';
 
 @Entity('rate_option_benefits')
@@ -29,11 +30,11 @@ export class RateOptionBenefit {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'rateOptionId' })
-  rateOption!: RateOption;
+  rateOption!: Relation<RateOption>;
 
   @ManyToOne(() => Benefit, (benefit) => benefit.rateOptionBenefits, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'benefitId' })
-  benefit!: Benefit;
+  benefit!: Relation<Benefit>;
 }
