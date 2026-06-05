@@ -88,6 +88,9 @@ export class AuthSeeder {
       [PermissionModule.ROOM_LIST]: READ_ONLY,
       [PermissionModule.ROOM_TYPES]: READ_ONLY,
       [PermissionModule.ROOM_TYPE_LIST]: READ_ONLY,
+      // Rate options — read only (customers browse rates to make bookings)
+      [PermissionModule.RATE_OPTIONS]: READ_ONLY,
+      [PermissionModule.RATE_OPTION_LIST]: READ_ONLY,
       // Own bookings — create + read + update (for cancellation); no delete
       [PermissionModule.BOOKINGS]: READ_WRITE,
       [PermissionModule.BOOKING_LIST]: READ_ONLY,
@@ -171,6 +174,16 @@ export class AuthSeeder {
         code: PermissionModule.ROOM_TYPES,
         children: [
           { name: 'Room Type List', code: PermissionModule.ROOM_TYPE_LIST },
+        ],
+      },
+      {
+        name: 'Rate Options',
+        code: PermissionModule.RATE_OPTIONS,
+        children: [
+          {
+            name: 'Rate Option List',
+            code: PermissionModule.RATE_OPTION_LIST,
+          },
         ],
       },
       {
