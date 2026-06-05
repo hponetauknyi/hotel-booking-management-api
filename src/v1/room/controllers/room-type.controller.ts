@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   HttpCode,
   Param,
   ParseUUIDPipe,
@@ -10,77 +11,77 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { Public } from 'src/v1/auth/decorators/public.decorator';
 import { RequirePermissions } from 'src/v1/auth/decorators/permissions.decorator';
 import { PermissionModule } from 'src/v1/auth/entities/permission.entity';
 import { PermissionsGuard } from 'src/v1/auth/guards/permissions.guard';
 import { LogAction } from 'src/v1/log/constants/log-action.enum';
 import { LogActivity } from 'src/v1/log/decorators/log-activity.decorator';
-import { CreateRoomDto } from '../dto/create-room.dto';
-import { RoomService } from '../services/room.service';
-import { BulkCreateRoomDto } from '../dto/bulk-create-room.dto';
-import { UpdateRoomDto } from '../dto/update-room.dto';
+import { RoomTypeService } from '../services/room-type.service';
+import { CreateRoomTypeDto } from '../dto/create-room-type.dto';
+import { UpdateRoomTypeDto } from '../dto/update-room-type.dto';
 
-@Controller({ path: 'hotels/:hotelId/rooms', version: '1' })
+@Controller({ path: 'hotels/:hotelId/room-types', version: '1' })
 @UseGuards(PermissionsGuard)
 @ApiBearerAuth('jwt-auth')
-export class RoomController {
-  constructor(private readonly roomService: RoomService) {}
+export class RoomTypeController {
+  constructor(private readonly roomTypeService: RoomTypeService) {}
 
   @Post()
   @LogActivity({
     action: LogAction.CREATE,
-    description: 'Admin created a room',
-    resourceType: 'Room',
+    description: 'Admin created a room type',
+    resourceType: 'RoomType',
   })
   @RequirePermissions({ module: PermissionModule.HOTELS, permission: 'create' })
   async create(
     @Param('hotelId', new ParseUUIDPipe({ version: '4' })) hotelId: string,
-    @Body() createRoomDto: CreateRoomDto,
+    @Body() createRoomTypeDto: CreateRoomTypeDto,
   ) {
-    return this.roomService.create(hotelId, createRoomDto);
+    return this.roomTypeService.create(hotelId, createRoomTypeDto);
   }
 
-  @Post('bulk')
-  @LogActivity({
-    action: LogAction.CREATE,
-    description: 'Admin bulk-created rooms',
-    resourceType: 'Room',
-  })
-  @RequirePermissions({ module: PermissionModule.HOTELS, permission: 'create' })
-  async bulkCreate(
+  @Get()
+  @Public()
+  async findAllByHotel(
     @Param('hotelId', new ParseUUIDPipe({ version: '4' })) hotelId: string,
-    @Body() bulkCreateRoomDto: BulkCreateRoomDto,
   ) {
-    return this.roomService.bulkCreate(hotelId, bulkCreateRoomDto);
+    return this.roomTypeService.findAllByHotel(hotelId);
+  }
+
+  @Get('characteristics')
+  @Public()
+  async findAllCharacteristics() {
+    return this.roomTypeService.findAllCharacteristics();
   }
 
   @Patch(':id')
   @LogActivity({
     action: LogAction.UPDATE,
-    description: 'Admin updated a room',
-    resourceType: 'Room',
+    description: 'Admin updated a room type',
+    resourceType: 'RoomType',
   })
   @RequirePermissions({ module: PermissionModule.HOTELS, permission: 'update' })
   async update(
     @Param('hotelId', new ParseUUIDPipe({ version: '4' })) hotelId: string,
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
-    @Body() updateRoomDto: UpdateRoomDto,
+    @Body() updateRoomTypeDto: UpdateRoomTypeDto,
   ) {
-    return this.roomService.update(hotelId, id, updateRoomDto);
+    return this.roomTypeService.update(hotelId, id, updateRoomTypeDto);
   }
 
   @Delete(':id')
   @HttpCode(200)
   @LogActivity({
     action: LogAction.DELETE,
-    description: 'Admin deleted a room',
-    resourceType: 'Room',
+    description: 'Admin deleted a room type',
+    resourceType: 'RoomType',
   })
   @RequirePermissions({ module: PermissionModule.HOTELS, permission: 'delete' })
   async remove(
     @Param('hotelId', new ParseUUIDPipe({ version: '4' })) hotelId: string,
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
   ) {
-    await this.roomService.remove(hotelId, id);
+    await this.roomTypeService.remove(hotelId, id);
   }
 }

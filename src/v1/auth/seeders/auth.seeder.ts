@@ -47,26 +47,54 @@ export class AuthSeeder {
     private moduleRepository: Repository<ModuleEntity>,
   ) {}
 
-  private getRoleConfigurations(allModules: string[]): RoleConfig[] {
-    const allPermissions = Object.values(ActionType).filter(
-      (value) => typeof value === 'string',
-    ) as ActionType[];
+  private readonly ADMIN_ONLY_MODULES: PermissionModule[] = [
+    PermissionModule.ADMIN,
+    PermissionModule.ADMIN_LIST,
+    PermissionModule.ADMIN_ROLE_PERMISSIONS,
+  ];
 
+  private getRoleConfigurations(allModules: string[]): RoleConfig[] {
+    const ALL = Object.values(ActionType) as ActionType[];
+    const READ_ONLY = [ActionType.READ];
+    const READ_WRITE = [ActionType.CREATE, ActionType.READ, ActionType.UPDATE];
+    // const READ_WRITE_DELETE = [
+    //   ActionType.CREATE,
+    //   ActionType.READ,
+    //   ActionType.UPDATE,
+    //   ActionType.DELETE,
+    // ];
+
+    // Super Admin: full access to every seeded module
     const allModuleAccess = Object.fromEntries(
-      allModules.map((module) => [module, allPermissions]),
+      allModules.map((module) => [module, ALL]),
     );
+
+    // Admin: full access to everything except admin-management modules
     const adminModuleAccess = Object.fromEntries(
       allModules
         .filter(
           (module) =>
-            ![
-              PermissionModule.ADMIN,
-              PermissionModule.ADMIN_LIST,
-              PermissionModule.ADMIN_ROLE_PERMISSIONS,
-            ].includes(module as PermissionModule),
+            !this.ADMIN_ONLY_MODULES.includes(module as PermissionModule),
         )
-        .map((module) => [module, allPermissions]),
+        .map((module) => [module, ALL]),
     );
+
+    // Customer: own bookings + own profile + read-only on public content
+    const customerModuleAccess: { [module: string]: ActionType[] } = {
+      // Public content — read only
+      [PermissionModule.HOTELS]: READ_ONLY,
+      [PermissionModule.HOTEL_LIST]: READ_ONLY,
+      [PermissionModule.ROOMS]: READ_ONLY,
+      [PermissionModule.ROOM_LIST]: READ_ONLY,
+      [PermissionModule.ROOM_TYPES]: READ_ONLY,
+      [PermissionModule.ROOM_TYPE_LIST]: READ_ONLY,
+      // Own bookings — create + read + update (for cancellation); no delete
+      [PermissionModule.BOOKINGS]: READ_WRITE,
+      [PermissionModule.BOOKING_LIST]: READ_ONLY,
+      // Own profile — read + update; no create/delete (account lifecycle is separate)
+      [PermissionModule.PROFILE]: [ActionType.READ, ActionType.UPDATE],
+    };
+
     return [
       {
         name: 'Super Admin',
@@ -82,12 +110,10 @@ export class AuthSeeder {
       },
       {
         name: 'Customer',
-        description: 'Customer role with access to public features',
+        description:
+          'Authenticated customer — can browse hotels/rooms, manage own bookings and profile',
         rank: 3,
-        modules: {
-          [PermissionModule.HOTELS]: [ActionType.READ],
-          [PermissionModule.HOTEL_LIST]: [ActionType.READ],
-        },
+        modules: customerModuleAccess,
       },
     ];
   }
@@ -98,10 +124,7 @@ export class AuthSeeder {
         name: 'Admin',
         code: PermissionModule.ADMIN,
         children: [
-          {
-            name: 'Admin List',
-            code: PermissionModule.ADMIN_LIST,
-          },
+          { name: 'Admin List', code: PermissionModule.ADMIN_LIST },
           {
             name: 'Admin Role Permissions',
             code: PermissionModule.ADMIN_ROLE_PERMISSIONS,
@@ -112,10 +135,7 @@ export class AuthSeeder {
         name: 'Setting',
         code: PermissionModule.SETTING,
         children: [
-          {
-            name: 'SMTP Setting',
-            code: PermissionModule.SETTING_SMTP,
-          },
+          { name: 'SMTP Setting', code: PermissionModule.SETTING_SMTP },
         ],
       },
       {
@@ -132,25 +152,37 @@ export class AuthSeeder {
         name: 'Logs',
         code: PermissionModule.LOGS,
         children: [
-          {
-            name: 'Activity Logs',
-            code: PermissionModule.ACTIVITY_LOGS,
-          },
-          {
-            name: 'Audit Logs',
-            code: PermissionModule.AUDIT_LOGS,
-          },
+          { name: 'Activity Logs', code: PermissionModule.ACTIVITY_LOGS },
+          { name: 'Audit Logs', code: PermissionModule.AUDIT_LOGS },
         ],
       },
       {
         name: 'Hotels',
         code: PermissionModule.HOTELS,
+        children: [{ name: 'Hotel List', code: PermissionModule.HOTEL_LIST }],
+      },
+      {
+        name: 'Rooms',
+        code: PermissionModule.ROOMS,
+        children: [{ name: 'Room List', code: PermissionModule.ROOM_LIST }],
+      },
+      {
+        name: 'Room Types',
+        code: PermissionModule.ROOM_TYPES,
         children: [
-          {
-            name: 'Hotel List',
-            code: PermissionModule.HOTEL_LIST,
-          },
+          { name: 'Room Type List', code: PermissionModule.ROOM_TYPE_LIST },
         ],
+      },
+      {
+        name: 'Bookings',
+        code: PermissionModule.BOOKINGS,
+        children: [
+          { name: 'Booking List', code: PermissionModule.BOOKING_LIST },
+        ],
+      },
+      {
+        name: 'Profile',
+        code: PermissionModule.PROFILE,
       },
     ];
 
@@ -169,7 +201,7 @@ export class AuthSeeder {
         moduleEntity = await this.moduleRepository.save(moduleEntity);
       }
 
-      if (moduleSeed.children && moduleSeed.children.length > 0) {
+      if (moduleSeed.children?.length) {
         for (const child of moduleSeed.children) {
           let childModule = await this.moduleRepository.findOne({
             where: { code: child.code, parentId: moduleEntity.id },
@@ -192,9 +224,7 @@ export class AuthSeeder {
     }
 
     const moduleCodes = createdModules.map((m) => m.code);
-
     const roleConfigs = this.getRoleConfigurations(moduleCodes);
-    const createdRoles: Role[] = [];
 
     const modulePermissions: { [moduleCode: string]: Permission[] } = {};
     for (const moduleEntity of createdModules) {
@@ -202,10 +232,12 @@ export class AuthSeeder {
         await this.createModulePermissions(moduleEntity);
     }
 
+    const createdRoles: Role[] = [];
     for (const roleConfig of roleConfigs) {
       const role = await this.createRole(
         roleConfig.name,
         roleConfig.description,
+        roleConfig.rank,
       );
       createdRoles.push(role);
 
@@ -216,28 +248,25 @@ export class AuthSeeder {
       );
     }
 
-    // Super Admin user
     const superAdminRole = createdRoles.find((r) => r.name === 'Super Admin');
-    if (superAdminRole) {
-      await this.createSuperAdmin(superAdminRole);
-    }
+    if (superAdminRole) await this.createSuperAdmin(superAdminRole);
 
     const adminRole = createdRoles.find((r) => r.name === 'Admin');
-    if (adminRole) {
-      await this.createAdminUser(adminRole);
-    }
+    if (adminRole) await this.createAdminUser(adminRole);
 
     const customerRole = createdRoles.find((r) => r.name === 'Customer');
-    if (customerRole) {
-      await this.createCustomerUser(customerRole);
-    }
+    if (customerRole) await this.createCustomerUser(customerRole);
   }
 
-  private async createRole(name: string, description: string): Promise<Role> {
+  private async createRole(
+    name: string,
+    description: string,
+    rank?: number,
+  ): Promise<Role> {
     const existingRole = await this.roleRepository.findOne({ where: { name } });
     if (existingRole) return existingRole;
     return this.roleRepository.save(
-      this.roleRepository.create({ name, description }),
+      this.roleRepository.create({ name, description, rank }),
     );
   }
 
@@ -268,7 +297,7 @@ export class AuthSeeder {
     modulePermissions: { [module: string]: Permission[] },
   ) {
     for (const [module, allowed] of Object.entries(moduleConfig)) {
-      const permissions = modulePermissions[module] || [];
+      const permissions = modulePermissions[module] ?? [];
       const filtered = permissions.filter((p) => allowed.includes(p.action));
       await this.assignPermissionsToRole(role, filtered);
     }

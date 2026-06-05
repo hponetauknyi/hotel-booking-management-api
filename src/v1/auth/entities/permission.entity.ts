@@ -34,6 +34,17 @@ export enum PermissionModule {
 
   HOTELS = 'HOTELS',
   HOTEL_LIST = 'HOTEL_LIST',
+
+  ROOMS = 'ROOMS',
+  ROOM_LIST = 'ROOM_LIST',
+
+  ROOM_TYPES = 'ROOM_TYPES',
+  ROOM_TYPE_LIST = 'ROOM_TYPE_LIST',
+
+  BOOKINGS = 'BOOKINGS',
+  BOOKING_LIST = 'BOOKING_LIST',
+
+  PROFILE = 'PROFILE',
 }
 
 @Entity('permissions')
