@@ -113,14 +113,14 @@ export class UserAuthService {
 
   async userLogin(loginDto: UserLoginDto, request: Request) {
     const user = await this.userRepository.findOne({
-      where: { phone: loginDto.phone },
+      where: { email: loginDto.email },
     });
 
     if (!user || !user.password) {
       this.logger.warn(
-        `Invalid login attempt for phone '${loginDto.phone}' (user not found or no password)`,
+        `Invalid login attempt for email '${loginDto.email}' (user not found or no password)`,
       );
-      throw new UnauthorizedException('Invalid phone or password');
+      throw new UnauthorizedException('Invalid email or password');
     }
 
     const isPasswordValid = await bcrypt.compare(
@@ -130,9 +130,9 @@ export class UserAuthService {
 
     if (!isPasswordValid) {
       this.logger.warn(
-        `Invalid login attempt for phone '${loginDto.phone}' (incorrect password)`,
+        `Invalid login attempt for email '${loginDto.email}' (incorrect password)`,
       );
-      throw new UnauthorizedException('Invalid phone or password');
+      throw new UnauthorizedException('Invalid email or password');
     }
 
     if (user.isBanned) {
@@ -140,7 +140,6 @@ export class UserAuthService {
       throw new UnauthorizedException('Your account has been banned');
     }
 
-    user.fcmToken = loginDto.fcmToken ?? user.fcmToken;
     user.lastLoginAt = nowUtc();
     await this.userRepository.save(user);
 
