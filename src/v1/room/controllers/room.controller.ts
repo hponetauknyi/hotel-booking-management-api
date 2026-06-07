@@ -2,11 +2,13 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   HttpCode,
   Param,
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
@@ -19,12 +21,23 @@ import { CreateRoomDto } from '../dto/create-room.dto';
 import { RoomService } from '../services/room.service';
 import { BulkCreateRoomDto } from '../dto/bulk-create-room.dto';
 import { UpdateRoomDto } from '../dto/update-room.dto';
+import { Public } from 'src/v1/auth/decorators/public.decorator';
+import { FilterRoomDto } from '../dto/filter-room.dto';
 
 @Controller({ path: 'hotels/:hotelId/rooms', version: '1' })
 @UseGuards(PermissionsGuard)
 @ApiBearerAuth('jwt-auth')
 export class RoomController {
   constructor(private readonly roomService: RoomService) {}
+
+  @Get()
+  @Public()
+  async findAllByHotel(
+    @Param('hotelId', new ParseUUIDPipe({ version: '4' })) hotelId: string,
+    @Query() queryRoomDto: FilterRoomDto,
+  ) {
+    return this.roomService.findAllByHotel(hotelId, queryRoomDto);
+  }
 
   @Post()
   @LogActivity({

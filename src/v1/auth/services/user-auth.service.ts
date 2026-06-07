@@ -53,7 +53,18 @@ export class UserAuthService {
   ) {}
 
   async validateUserById(id: string): Promise<User | null> {
-    return this.userRepository.findOne({ where: { id } });
+    return this.userRepository.findOne({
+      where: { id },
+      relations: {
+        role: {
+          rolePermissions: {
+            permission: {
+              module: true,
+            },
+          },
+        },
+      },
+    });
   }
 
   private async logActivity(

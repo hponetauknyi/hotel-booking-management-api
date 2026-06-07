@@ -16,6 +16,7 @@ import { RoomType } from '../entities/room-type.entity';
 import { Hotel } from 'src/v1/hotel/entities/hotel.entity';
 import { BulkCreateRoomDto } from '../dto/bulk-create-room.dto';
 import { UpdateRoomDto } from '../dto/update-room.dto';
+import { FilterRoomDto } from '../dto/filter-room.dto';
 
 @Injectable()
 export class RoomService {
@@ -30,6 +31,66 @@ export class RoomService {
     private hotelRepository: Repository<Hotel>,
     private dataSource: DataSource,
   ) {}
+
+  async findAllByHotel(
+    hotelId: string,
+    filterRoomDto: FilterRoomDto,
+  ): Promise<{ data: Room[]; total: number; page: number; limit: number }> {
+    await this.assertHotelExists(hotelId);
+
+    const { roomTypeId, status, minPrice, maxPrice, page, limit, getAll } =
+      filterRoomDto;
+
+    const qb = this.roomRepository
+      .createQueryBuilder('room')
+      .leftJoinAndSelect('room.roomType', 'roomType')
+      .leftJoinAndSelect(
+        'roomType.roomTypeCharacteristics',
+        'roomTypeCharacteristic',
+      )
+      .leftJoinAndSelect(
+        'roomTypeCharacteristic.roomCharacteristic',
+        'roomCharacteristic',
+      )
+      .where('room.hotelId = :hotelId', { hotelId });
+
+    if (roomTypeId) {
+      qb.andWhere('room.roomTypeId = :roomTypeId', { roomTypeId });
+    }
+
+    if (status) {
+      qb.andWhere('room.status = :status', { status });
+    }
+
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      qb.innerJoin('roomType.rateOptions', 'rateOption');
+
+      if (minPrice !== undefined) {
+        qb.andWhere('rateOption.price >= :minPrice', { minPrice });
+      }
+
+      if (maxPrice !== undefined) {
+        qb.andWhere('rateOption.price <= :maxPrice', { maxPrice });
+      }
+
+      qb.distinct(true);
+    }
+
+    qb.orderBy('room.floorNumber', 'ASC').addOrderBy('room.roomNumber', 'ASC');
+
+    if (!getAll) {
+      qb.skip((page - 1) * limit).take(limit);
+    }
+
+    const [data, total] = await qb.getManyAndCount();
+
+    return {
+      data,
+      total,
+      page: getAll ? 1 : page,
+      limit: getAll ? total : limit,
+    };
+  }
 
   async create(hotelId: string, createRoomDto: CreateRoomDto): Promise<Room> {
     await this.assertHotelExists(hotelId);
