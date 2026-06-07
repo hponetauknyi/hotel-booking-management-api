@@ -57,19 +57,13 @@ export class AuthSeeder {
     const ALL = Object.values(ActionType) as ActionType[];
     const READ_ONLY = [ActionType.READ];
     const READ_WRITE = [ActionType.CREATE, ActionType.READ, ActionType.UPDATE];
-    // const READ_WRITE_DELETE = [
-    //   ActionType.CREATE,
-    //   ActionType.READ,
-    //   ActionType.UPDATE,
-    //   ActionType.DELETE,
-    // ];
 
     // Super Admin: full access to every seeded module
     const allModuleAccess = Object.fromEntries(
       allModules.map((module) => [module, ALL]),
     );
 
-    // Admin: full access to everything except admin-management modules
+    // Admin: full access to everything except admin-management
     const adminModuleAccess = Object.fromEntries(
       allModules
         .filter(

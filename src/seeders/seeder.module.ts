@@ -14,6 +14,20 @@ import { HotelSeeder } from '../v1/hotel/seeders/hotel.seeder';
 import { Setting } from '../v1/setting/entities/setting.entity';
 import { SettingSeeder } from '../v1/setting/seeders/setting.seeder';
 import { User } from '../v1/user/entities/user.entity';
+import { Benefit } from 'src/v1/rate-option/entities/benefit.entity';
+import { RateOptionBenefit } from 'src/v1/rate-option/entities/rate-option-benefit.entity';
+import { RateOption } from 'src/v1/rate-option/entities/rate-option.entity';
+import { RoomTypeCharacteristic } from 'src/v1/room/entities/room-type-characteristic.entity';
+import { RoomCharacteristic } from 'src/v1/room/entities/room-characteristic.entity';
+import { RoomType } from 'src/v1/room/entities/room-type.entity';
+import { Room } from 'src/v1/room/entities/room.entity';
+import { BenefitSeeder } from 'src/v1/rate-option/seeders/benefit.seeder';
+import { RateOptionSeeder } from 'src/v1/rate-option/seeders/rate-option.seeder';
+import { RoomSeeder } from 'src/v1/room/seeders/room.seeder';
+import { RoomTypeSeeder } from 'src/v1/room/seeders/room-type.seeder';
+import { RoomCharacteristicSeeder } from 'src/v1/room/seeders/room-characteristic.seeder';
+import { RoomTypeCharacteristicSeeder } from 'src/v1/room/seeders/room-type-characteristic.seeder';
+import { RateOptionBenefitSeeder } from 'src/v1/rate-option/seeders/rate-option-benefit.seeder';
 
 @Module({
   imports: [
@@ -36,8 +50,26 @@ import { User } from '../v1/user/entities/user.entity';
       Hotel,
       Setting,
       User,
+      Benefit,
+      RateOptionBenefit,
+      RateOption,
+      RoomTypeCharacteristic,
+      RoomCharacteristic,
+      RoomType,
+      Room,
     ]),
   ],
-  providers: [AuthSeeder, HotelSeeder, SettingSeeder],
+  providers: [
+    AuthSeeder,
+    HotelSeeder,
+    SettingSeeder,
+    BenefitSeeder,
+    RateOptionSeeder,
+    RateOptionBenefitSeeder,
+    RoomSeeder,
+    RoomTypeSeeder,
+    RoomCharacteristicSeeder,
+    RoomTypeCharacteristicSeeder,
+  ],
 })
 export class SeederModule {}
