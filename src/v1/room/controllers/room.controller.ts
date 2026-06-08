@@ -13,16 +13,16 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { RequirePermissions } from 'src/v1/auth/decorators/permissions.decorator';
+import { Public } from 'src/v1/auth/decorators/public.decorator';
 import { PermissionModule } from 'src/v1/auth/entities/permission.entity';
 import { PermissionsGuard } from 'src/v1/auth/guards/permissions.guard';
 import { LogAction } from 'src/v1/log/constants/log-action.enum';
 import { LogActivity } from 'src/v1/log/decorators/log-activity.decorator';
-import { CreateRoomDto } from '../dto/create-room.dto';
-import { RoomService } from '../services/room.service';
 import { BulkCreateRoomDto } from '../dto/bulk-create-room.dto';
-import { UpdateRoomDto } from '../dto/update-room.dto';
-import { Public } from 'src/v1/auth/decorators/public.decorator';
+import { CreateRoomDto } from '../dto/create-room.dto';
 import { FilterRoomDto } from '../dto/filter-room.dto';
+import { UpdateRoomDto } from '../dto/update-room.dto';
+import { RoomService } from '../services/room.service';
 
 @Controller({ path: 'hotels/:hotelId/rooms', version: '1' })
 @UseGuards(PermissionsGuard)

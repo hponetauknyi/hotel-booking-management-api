@@ -1,5 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Hotel } from 'src/v1/hotel/entities/hotel.entity';
 import {
   attachAuditLogMetadata,
   diffAuditValues,
@@ -10,8 +11,6 @@ import { UpdateRoomTypeDto } from '../dto/update-room-type.dto';
 import { RoomCharacteristic } from '../entities/room-characteristic.entity';
 import { RoomTypeCharacteristic } from '../entities/room-type-characteristic.entity';
 import { RoomType } from '../entities/room-type.entity';
-import { RoomStatus } from '../entities/room.entity';
-import { Hotel } from 'src/v1/hotel/entities/hotel.entity';
 
 @Injectable()
 export class RoomTypeService {
@@ -79,8 +78,6 @@ export class RoomTypeService {
         'roomType.availableRoomsCount',
         'roomType.rooms',
         'room',
-        (qb) =>
-          qb.where('room.status = :status', { status: RoomStatus.AVAILABLE }),
       )
       .orderBy('roomType.createdAt', 'DESC')
       .getMany();

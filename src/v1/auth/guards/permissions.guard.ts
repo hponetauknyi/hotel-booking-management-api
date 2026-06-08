@@ -29,10 +29,6 @@ export class PermissionsGuard implements CanActivate {
     }
 
     const { user } = context.switchToHttp().getRequest<RequestWithUser>();
-
-    console.log('User in PermissionsGuard:', user);
-    console.log('Required permissions:', requiredPermissions);
-    console.log('User role permissions:', user?.role?.rolePermissions);
     if (!user || !user.role?.rolePermissions) {
       throw new ForbiddenException('Access denied: No permissions');
     }

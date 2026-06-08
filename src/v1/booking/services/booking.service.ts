@@ -9,7 +9,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { AuthenticatedUser } from 'src/v1/auth/interfaces/user.interface';
 import { RateOption } from 'src/v1/rate-option/entities/rate-option.entity';
-import { Room, RoomStatus } from 'src/v1/room/entities/room.entity';
+import { Room } from 'src/v1/room/entities/room.entity';
 import { DataSource, Repository } from 'typeorm';
 import { CreateBookingDto } from '../dto/create-booking.dto';
 import { FilterBookingDto } from '../dto/filter-booking.dto';
@@ -257,12 +257,6 @@ export class BookingService {
         if (!room) {
           throw new NotFoundException(
             `Room with ID '${item.roomId}' not found`,
-          );
-        }
-
-        if (room.status !== RoomStatus.AVAILABLE) {
-          throw new BadRequestException(
-            `Room '${room.roomNumber}' is not available (status: ${room.status})`,
           );
         }
 

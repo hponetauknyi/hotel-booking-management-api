@@ -5,18 +5,18 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Hotel } from 'src/v1/hotel/entities/hotel.entity';
 import {
   attachAuditLogMetadata,
   diffAuditValues,
 } from 'src/v1/log/utils/audit-log-metadata.util';
-import { DataSource, In, Repository } from 'typeorm';
-import { CreateRoomDto } from '../dto/create-room.dto';
-import { Room } from '../entities/room.entity';
-import { RoomType } from '../entities/room-type.entity';
-import { Hotel } from 'src/v1/hotel/entities/hotel.entity';
+import { In, Repository } from 'typeorm';
 import { BulkCreateRoomDto } from '../dto/bulk-create-room.dto';
-import { UpdateRoomDto } from '../dto/update-room.dto';
+import { CreateRoomDto } from '../dto/create-room.dto';
 import { FilterRoomDto } from '../dto/filter-room.dto';
+import { UpdateRoomDto } from '../dto/update-room.dto';
+import { RoomType } from '../entities/room-type.entity';
+import { Room } from '../entities/room.entity';
 
 @Injectable()
 export class RoomService {
@@ -29,16 +29,15 @@ export class RoomService {
     private roomTypeRepository: Repository<RoomType>,
     @InjectRepository(Hotel)
     private hotelRepository: Repository<Hotel>,
-    private dataSource: DataSource,
   ) {}
 
   async findAllByHotel(
     hotelId: string,
     filterRoomDto: FilterRoomDto,
-  ): Promise<{ data: Room[]; total: number; page: number; limit: number }> {
+  ): Promise<{ items: Room[]; total: number }> {
     await this.assertHotelExists(hotelId);
 
-    const { roomTypeId, status, minPrice, maxPrice, page, limit, getAll } =
+    const { roomTypeId, minPrice, maxPrice, page, limit, getAll } =
       filterRoomDto;
 
     const qb = this.roomRepository
@@ -56,10 +55,6 @@ export class RoomService {
 
     if (roomTypeId) {
       qb.andWhere('room.roomTypeId = :roomTypeId', { roomTypeId });
-    }
-
-    if (status) {
-      qb.andWhere('room.status = :status', { status });
     }
 
     if (minPrice !== undefined || maxPrice !== undefined) {
@@ -82,13 +77,11 @@ export class RoomService {
       qb.skip((page - 1) * limit).take(limit);
     }
 
-    const [data, total] = await qb.getManyAndCount();
+    const [items, total] = await qb.getManyAndCount();
 
     return {
-      data,
+      items,
       total,
-      page: getAll ? 1 : page,
-      limit: getAll ? total : limit,
     };
   }
 
