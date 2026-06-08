@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -36,6 +37,8 @@ import { UserRegisterOTPVerifyDto } from '../dto/user-register-otp-verify.dto';
 import { UserRegisterPasswordSetupDto } from '../dto/user-register-password-setup.dto';
 import { AuthenticatedUser, JwtPayload } from '../interfaces/user.interface';
 import { TokenService } from './token.service';
+import { UserRegisterDto } from '../dto/user-register.dto';
+import { Role } from '../entities/role.entity';
 
 @Injectable()
 export class UserAuthService {
@@ -44,6 +47,8 @@ export class UserAuthService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(Role)
+    private roleRepository: Repository<Role>,
     private tokenService: TokenService,
     private activityLogService: ActivityLogService,
     private smsPhoServiceUtils: SMSPhoServiceUtils,
@@ -348,11 +353,22 @@ export class UserAuthService {
       code: dto.otp,
     });
 
+    const customerRole = await this.roleRepository.findOne({
+      where: { name: 'Customer' },
+      select: ['id'],
+    });
+
+    if (!customerRole) {
+      this.logger.error('Customer role not found — ensure it is seeded');
+      throw new InternalServerErrorException('Registration is unavailable');
+    }
+
     if (success) {
       const newUser = this.userRepository.create({
         fcmToken: dto.fcmToken,
         registrationStage: UserRegistrationStage.OTP_VERIFIED,
         phone: dto.phone,
+        roleId: customerRole.id,
       });
       await this.userRepository.save(newUser);
       return {
@@ -583,5 +599,68 @@ export class UserAuthService {
       await this.tokenService.revokeAllUserTokens(user.id);
       this.logger.log(`User with ID '${user.id}' logged out successfully`);
     }
+  }
+
+  async userRegister(
+    dto: UserRegisterDto,
+    file: Express.Multer.File | undefined,
+    request: Request,
+  ) {
+    const existing = await this.userRepository.findOne({
+      where: {
+        phone: dto.phone,
+        registrationStage: UserRegistrationStage.COMPLETED,
+      },
+    });
+
+    if (existing) {
+      this.logger.warn(`User with phone '${dto.phone}' already exists`);
+      throw new ConflictException('User with this phone number already exists');
+    }
+
+    const customerRole = await this.roleRepository.findOne({
+      where: { name: 'Customer' },
+      select: ['id'],
+    });
+
+    if (!customerRole) {
+      this.logger.error('Customer role not found — ensure it is seeded');
+      throw new InternalServerErrorException('Registration is unavailable');
+    }
+
+    let profileImageUrl = '';
+    if (file) {
+      const uploadedKey = await this.fileUploadService.uploadProfileImage(
+        file,
+        'users/profile',
+      );
+      if (uploadedKey) profileImageUrl = uploadedKey;
+    }
+
+    const user = this.userRepository.create({
+      phone: dto.phone,
+      password: dto.password,
+      fullName: dto.fullName,
+      email: dto.email,
+      dateOfBirth: dto.dateOfBirth,
+      gender: dto.gender,
+      preferLanguage: dto.preferLanguage,
+      profileImageUrl,
+      roleId: customerRole.id,
+      loginProvider: LoginProvider.SMS,
+      registrationStage: UserRegistrationStage.COMPLETED,
+      lastLoginAt: nowUtc(),
+    });
+
+    const savedUser = await this.userRepository.save(user);
+
+    await this.logActivity(
+      request,
+      savedUser.id,
+      LogAction.REGISTER,
+      'User registered successfully',
+    );
+
+    return this.completeUserLogin(savedUser, request);
   }
 }

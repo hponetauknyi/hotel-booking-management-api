@@ -46,6 +46,7 @@ import { PasswordResetService } from '../services/password-reset.service';
 import { TokenService } from '../services/token.service';
 import { TwoFactorService } from '../services/two-factor.service';
 import { UserAuthService } from '../services/user-auth.service';
+import { UserRegisterDto } from '../dto/user-register.dto';
 
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
@@ -93,6 +94,21 @@ export class AuthController {
     @Req() request: Request,
   ) {
     return this.userAuthService.userAppleLogin(dto, request);
+  }
+
+  @Public()
+  @Post('user/register')
+  @UseInterceptors(
+    FileInterceptor('profileImage', profileImageInterceptorOptions),
+  )
+  @HttpCode(200)
+  @RequestTimeout(30_000)
+  async userRegister(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() dto: UserRegisterDto,
+    @Req() request: Request,
+  ) {
+    return this.userAuthService.userRegister(dto, file, request);
   }
 
   @Public()
