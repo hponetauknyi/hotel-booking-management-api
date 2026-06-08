@@ -263,4 +263,8 @@ export class RateOptionService {
       );
     }
   }
+
+  async findAllBenefits(): Promise<Benefit[]> {
+    return this.benefitRepository.find({ order: { createdAt: 'DESC' } });
+  }
 }

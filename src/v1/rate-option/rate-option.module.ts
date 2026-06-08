@@ -6,6 +6,7 @@ import { Benefit } from './entities/benefit.entity';
 import { RateOptionBenefit } from './entities/rate-option-benefit.entity';
 import { RateOption } from './entities/rate-option.entity';
 import { RateOptionService } from './services/rate-option.service';
+import { BenefitController } from './controllers/benefit.controller';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { RateOptionService } from './services/rate-option.service';
       RoomType,
     ]),
   ],
-  controllers: [RateOptionController],
+  controllers: [RateOptionController, BenefitController],
   providers: [RateOptionService],
   exports: [RateOptionService],
 })

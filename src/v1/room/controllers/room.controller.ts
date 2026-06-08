@@ -11,7 +11,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { RequirePermissions } from 'src/v1/auth/decorators/permissions.decorator';
 import { PermissionModule } from 'src/v1/auth/entities/permission.entity';
 import { PermissionsGuard } from 'src/v1/auth/guards/permissions.guard';
@@ -32,6 +32,9 @@ export class RoomController {
 
   @Get()
   @Public()
+  @ApiOperation({
+    summary: 'Get all rooms for a specific hotel with optional filters',
+  })
   async findAllByHotel(
     @Param('hotelId', new ParseUUIDPipe({ version: '4' })) hotelId: string,
     @Query() queryRoomDto: FilterRoomDto,
@@ -45,6 +48,7 @@ export class RoomController {
     description: 'Admin created a room',
     resourceType: 'Room',
   })
+  @ApiOperation({ summary: 'Create a new room for a hotel' })
   @RequirePermissions({ module: PermissionModule.HOTELS, permission: 'create' })
   async create(
     @Param('hotelId', new ParseUUIDPipe({ version: '4' })) hotelId: string,
@@ -60,6 +64,7 @@ export class RoomController {
     resourceType: 'Room',
   })
   @RequirePermissions({ module: PermissionModule.HOTELS, permission: 'create' })
+  @ApiOperation({ summary: 'Bulk create rooms for a hotel' })
   async bulkCreate(
     @Param('hotelId', new ParseUUIDPipe({ version: '4' })) hotelId: string,
     @Body() bulkCreateRoomDto: BulkCreateRoomDto,
@@ -74,6 +79,7 @@ export class RoomController {
     resourceType: 'Room',
   })
   @RequirePermissions({ module: PermissionModule.HOTELS, permission: 'update' })
+  @ApiOperation({ summary: 'Update an existing room' })
   async update(
     @Param('hotelId', new ParseUUIDPipe({ version: '4' })) hotelId: string,
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
@@ -89,6 +95,7 @@ export class RoomController {
     description: 'Admin deleted a room',
     resourceType: 'Room',
   })
+  @ApiOperation({ summary: 'Delete a room' })
   @RequirePermissions({ module: PermissionModule.HOTELS, permission: 'delete' })
   async remove(
     @Param('hotelId', new ParseUUIDPipe({ version: '4' })) hotelId: string,

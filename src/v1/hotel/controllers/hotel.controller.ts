@@ -23,7 +23,7 @@ import { HotelService } from '../services/hotel.service';
 import { PermissionsGuard } from 'src/v1/auth/guards/permissions.guard';
 import { RequirePermissions } from 'src/v1/auth/decorators/permissions.decorator';
 import { PermissionModule } from 'src/v1/auth/entities/permission.entity';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 
 @Controller({ path: 'hotels', version: '1' })
 @UseGuards(PermissionsGuard)
@@ -33,6 +33,7 @@ export class HotelController {
 
   @Get()
   @Public()
+  @ApiOperation({ summary: 'Get all hotels with optional filters' })
   async findAll(
     @Query() filters: FilterHotelDto,
     @CurrentUser() currentUser?: AuthenticatedUser,
@@ -42,6 +43,7 @@ export class HotelController {
 
   @Get(':id')
   @Public()
+  @ApiOperation({ summary: 'Get details of a specific hotel' })
   async findOne(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @CurrentUser() currentUser?: AuthenticatedUser,
@@ -59,6 +61,7 @@ export class HotelController {
     module: PermissionModule.HOTELS,
     permission: 'create',
   })
+  @ApiOperation({ summary: 'Create a new hotel' })
   async create(
     @CurrentUser() currentUser: AuthenticatedUser,
     @Body() createHotelDto: CreateHotelDto,
@@ -73,6 +76,7 @@ export class HotelController {
     resourceType: 'Hotel',
   })
   @RequirePermissions({ module: PermissionModule.HOTELS, permission: 'update' })
+  @ApiOperation({ summary: 'Update an existing hotel' })
   async update(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @CurrentUser() currentUser: AuthenticatedUser,
@@ -89,6 +93,7 @@ export class HotelController {
     resourceType: 'Hotel',
   })
   @RequirePermissions({ module: PermissionModule.HOTELS, permission: 'delete' })
+  @ApiOperation({ summary: 'Delete a hotel' })
   async remove(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @CurrentUser() currentUser: AuthenticatedUser,

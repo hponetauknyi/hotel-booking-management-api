@@ -10,7 +10,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { Public } from 'src/v1/auth/decorators/public.decorator';
 import { RequirePermissions } from 'src/v1/auth/decorators/permissions.decorator';
 import { PermissionModule } from 'src/v1/auth/entities/permission.entity';
@@ -41,6 +41,7 @@ export class RateOptionController {
     module: PermissionModule.ROOM_TYPES,
     permission: 'create',
   })
+  @ApiOperation({ summary: 'Create a new rate option for a room type' })
   async create(
     @Param('roomTypeId', new ParseUUIDPipe({ version: '4' }))
     roomTypeId: string,
@@ -51,6 +52,7 @@ export class RateOptionController {
 
   @Get()
   @Public()
+  @ApiOperation({ summary: 'Get all rate options for a room type' })
   async findAllByRoomType(
     @Param('roomTypeId', new ParseUUIDPipe({ version: '4' }))
     roomTypeId: string,
@@ -68,6 +70,7 @@ export class RateOptionController {
     module: PermissionModule.ROOM_TYPES,
     permission: 'update',
   })
+  @ApiOperation({ summary: 'Update a rate option for a room type' })
   async update(
     @Param('roomTypeId', new ParseUUIDPipe({ version: '4' }))
     roomTypeId: string,
@@ -88,6 +91,7 @@ export class RateOptionController {
     module: PermissionModule.ROOM_TYPES,
     permission: 'delete',
   })
+  @ApiOperation({ summary: 'Delete a rate option from a room type' })
   async remove(
     @Param('roomTypeId', new ParseUUIDPipe({ version: '4' }))
     roomTypeId: string,
@@ -107,6 +111,7 @@ export class RateOptionController {
     module: PermissionModule.ROOM_TYPES,
     permission: 'update',
   })
+  @ApiOperation({ summary: 'Add benefits to a rate option' })
   async addBenefits(
     @Param('roomTypeId', new ParseUUIDPipe({ version: '4' }))
     roomTypeId: string,
@@ -127,6 +132,7 @@ export class RateOptionController {
     module: PermissionModule.ROOM_TYPES,
     permission: 'update',
   })
+  @ApiOperation({ summary: 'Remove benefits from a rate option' })
   async removeBenefits(
     @Param('roomTypeId', new ParseUUIDPipe({ version: '4' }))
     roomTypeId: string,

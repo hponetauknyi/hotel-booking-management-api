@@ -10,7 +10,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { Public } from 'src/v1/auth/decorators/public.decorator';
 import { RequirePermissions } from 'src/v1/auth/decorators/permissions.decorator';
 import { PermissionModule } from 'src/v1/auth/entities/permission.entity';
@@ -34,6 +34,7 @@ export class RoomTypeController {
     resourceType: 'RoomType',
   })
   @RequirePermissions({ module: PermissionModule.HOTELS, permission: 'create' })
+  @ApiOperation({ summary: 'Create a new room type for a hotel' })
   async create(
     @Param('hotelId', new ParseUUIDPipe({ version: '4' })) hotelId: string,
     @Body() createRoomTypeDto: CreateRoomTypeDto,
@@ -43,6 +44,7 @@ export class RoomTypeController {
 
   @Get()
   @Public()
+  @ApiOperation({ summary: 'Get all room types for a specific hotel' })
   async findAllByHotel(
     @Param('hotelId', new ParseUUIDPipe({ version: '4' })) hotelId: string,
   ) {
@@ -56,6 +58,7 @@ export class RoomTypeController {
     resourceType: 'RoomType',
   })
   @RequirePermissions({ module: PermissionModule.HOTELS, permission: 'update' })
+  @ApiOperation({ summary: 'Update an existing room type' })
   async update(
     @Param('hotelId', new ParseUUIDPipe({ version: '4' })) hotelId: string,
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
@@ -72,6 +75,7 @@ export class RoomTypeController {
     resourceType: 'RoomType',
   })
   @RequirePermissions({ module: PermissionModule.HOTELS, permission: 'delete' })
+  @ApiOperation({ summary: 'Delete a room type' })
   async remove(
     @Param('hotelId', new ParseUUIDPipe({ version: '4' })) hotelId: string,
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,

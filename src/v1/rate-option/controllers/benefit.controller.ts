@@ -1,19 +1,19 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { PermissionsGuard } from 'src/v1/auth/guards/permissions.guard';
-import { RoomTypeService } from '../services/room-type.service';
+import { RateOptionService } from '../services/rate-option.service';
 import { Public } from 'src/v1/auth/decorators/public.decorator';
 
-@Controller({ path: 'room-characteristics', version: '1' })
+@Controller({ path: 'benefits', version: '1' })
 @UseGuards(PermissionsGuard)
 @ApiBearerAuth('jwt-auth')
-export class RoomCharacteristicController {
-  constructor(private readonly roomTypeService: RoomTypeService) {}
+export class BenefitController {
+  constructor(private readonly rateOptionService: RateOptionService) {}
 
   @Get()
   @Public()
-  @ApiOperation({ summary: 'Get all room characteristics' })
+  @ApiOperation({ summary: 'Get all benefits' })
   async findAll() {
-    return this.roomTypeService.findAllCharacteristics();
+    return this.rateOptionService.findAllBenefits();
   }
 }

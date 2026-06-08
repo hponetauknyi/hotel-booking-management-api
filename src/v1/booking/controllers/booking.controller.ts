@@ -9,7 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { CurrentUser } from 'src/v1/auth/decorators/current-user.decorator';
 import { RequirePermissions } from 'src/v1/auth/decorators/permissions.decorator';
 import { AuthenticatedUser } from 'src/v1/auth/interfaces/user.interface';
@@ -38,6 +38,7 @@ export class BookingController {
     module: PermissionModule.BOOKINGS,
     permission: 'create',
   })
+  @ApiOperation({ summary: 'Create a new booking' })
   async create(
     @Body() createBookingDto: CreateBookingDto,
     @CurrentUser() currentUser: AuthenticatedUser,
@@ -46,6 +47,7 @@ export class BookingController {
   }
 
   @Get()
+  @ApiOperation({ summary: 'Get all bookings' })
   @RequirePermissions({ module: PermissionModule.BOOKINGS, permission: 'read' })
   async findAll(
     @Query() filter: FilterBookingDto,
@@ -55,6 +57,7 @@ export class BookingController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get a specific booking' })
   @RequirePermissions({ module: PermissionModule.BOOKINGS, permission: 'read' })
   async findOne(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
@@ -73,6 +76,7 @@ export class BookingController {
     module: PermissionModule.BOOKINGS,
     permission: 'update',
   })
+  @ApiOperation({ summary: 'Update the status of a booking' })
   async patchStatus(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() dto: PatchBookingStatusDto,
