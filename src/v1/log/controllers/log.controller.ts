@@ -7,9 +7,11 @@ import { PermissionsGuard } from 'src/v1/auth/guards/permissions.guard';
 import { RequirePermissions } from 'src/v1/auth/decorators/permissions.decorator';
 import { PermissionModule } from 'src/v1/auth/entities/permission.entity';
 import { ResolvePresignedUrls } from 'src/common/decorators/presigned-urls.decorator';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller({ path: '', version: '1' })
 @UseGuards(PermissionsGuard)
+@ApiBearerAuth('jwt-auth')
 export class ActivityLogController {
   constructor(
     private readonly activityLogService: ActivityLogService,

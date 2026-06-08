@@ -25,9 +25,11 @@ import { CreateAdminDto } from '../dto/create-admin.dto';
 import { FilterAdminDto } from '../dto/filter-admin.dto';
 import { UpdateAdminDto } from '../dto/update-admin.dto';
 import { AdminService } from '../services/admin.service';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller({ path: 'admins', version: '1' })
 @UseGuards(PermissionsGuard)
+@ApiBearerAuth('jwt-auth')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 

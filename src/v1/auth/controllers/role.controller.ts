@@ -21,9 +21,11 @@ import { LogAction } from 'src/v1/log/constants/log-action.enum';
 import { CreateRoleDto } from '../dto/create-role.dto';
 import { UpdateRoleDto } from '../dto/update-role.dto';
 import { FilterRoleDto } from '../dto/filter-role.dto';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller({ path: 'roles', version: '1' })
 @UseGuards(PermissionsGuard)
+@ApiBearerAuth('jwt-auth')
 export class RoleController {
   constructor(private readonly roleService: RoleService) {}
 

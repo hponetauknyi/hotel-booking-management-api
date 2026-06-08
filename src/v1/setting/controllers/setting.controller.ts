@@ -14,8 +14,10 @@ import { LogActivity } from 'src/v1/log/decorators/log-activity.decorator';
 import { LogAction } from 'src/v1/log/constants/log-action.enum';
 import { SettingService } from '../services/setting.service';
 import { CreateSMTPDto } from '../dto/create-smtp-setting.dto';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller({ path: 'settings', version: '1' })
+@ApiBearerAuth('jwt-auth')
 export class SettingController {
   constructor(private readonly settingService: SettingService) {}
 
