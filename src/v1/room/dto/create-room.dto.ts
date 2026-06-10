@@ -1,5 +1,14 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, IsString, IsUUID, Max, Min } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsString,
+  IsUUID,
+  Max,
+  Min,
+} from 'class-validator';
+import { RoomStatus } from '../entities/room.entity';
 
 export class CreateRoomDto {
   @IsUUID('4', { message: 'Room type ID must be a valid UUID' })
@@ -17,4 +26,10 @@ export class CreateRoomDto {
   @Max(200, { message: 'Floor number must not exceed 200' })
   @ApiProperty({ example: 1 })
   floorNumber!: number;
+
+  @IsEnum(RoomStatus, {
+    message: `Status must be one of: ${Object.values(RoomStatus).join(', ')}`,
+  })
+  @ApiPropertyOptional({ enum: RoomStatus, default: RoomStatus.AVAILABLE })
+  status: RoomStatus = RoomStatus.AVAILABLE;
 }

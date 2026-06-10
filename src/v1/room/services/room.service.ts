@@ -10,7 +10,7 @@ import {
   attachAuditLogMetadata,
   diffAuditValues,
 } from 'src/v1/log/utils/audit-log-metadata.util';
-import { In, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { BulkCreateRoomDto } from '../dto/bulk-create-room.dto';
 import { CreateRoomDto } from '../dto/create-room.dto';
 import { FilterRoomDto } from '../dto/filter-room.dto';
@@ -29,15 +29,16 @@ export class RoomService {
     private roomTypeRepository: Repository<RoomType>,
     @InjectRepository(Hotel)
     private hotelRepository: Repository<Hotel>,
+    private dataSource: DataSource,
   ) {}
 
   async findAllByHotel(
     hotelId: string,
     filterRoomDto: FilterRoomDto,
-  ): Promise<{ items: Room[]; total: number }> {
+  ): Promise<{ data: Room[]; total: number; page: number; limit: number }> {
     await this.assertHotelExists(hotelId);
 
-    const { roomTypeId, minPrice, maxPrice, page, limit, getAll } =
+    const { roomTypeId, status, minPrice, maxPrice, page, limit, getAll } =
       filterRoomDto;
 
     const qb = this.roomRepository
@@ -55,6 +56,10 @@ export class RoomService {
 
     if (roomTypeId) {
       qb.andWhere('room.roomTypeId = :roomTypeId', { roomTypeId });
+    }
+
+    if (status) {
+      qb.andWhere('room.status = :status', { status });
     }
 
     if (minPrice !== undefined || maxPrice !== undefined) {
@@ -77,11 +82,13 @@ export class RoomService {
       qb.skip((page - 1) * limit).take(limit);
     }
 
-    const [items, total] = await qb.getManyAndCount();
+    const [data, total] = await qb.getManyAndCount();
 
     return {
-      items,
+      data,
       total,
+      page: getAll ? 1 : page,
+      limit: getAll ? total : limit,
     };
   }
 
