@@ -126,6 +126,16 @@ export class BookingService {
         })
         .execute();
 
+      // 5. Mark rooms as OCCUPIED
+      await manager
+        .createQueryBuilder()
+        .update(Room)
+        .set({ status: RoomStatus.OCCUPIED })
+        .where('id IN (:...roomIds)', {
+          roomIds: bookingRoomData.map((r) => r.roomId),
+        })
+        .execute();
+
       return savedBooking;
     });
 
@@ -193,6 +203,25 @@ export class BookingService {
 
     booking.status = dto.status;
     const savedBooking = await this.bookingRepository.save(booking);
+
+    if (
+      dto.status === BookingStatus.CHECKED_OUT ||
+      dto.status === BookingStatus.CANCELLED
+    ) {
+      // Mark rooms as AVAILABLE again
+      const bookingRooms = await this.bookingRoomRepository.find({
+        where: { bookingId: booking.id },
+      });
+
+      await this.dataSource
+        .createQueryBuilder()
+        .update(Room)
+        .set({ status: RoomStatus.AVAILABLE })
+        .where('id IN (:...roomIds)', {
+          roomIds: bookingRooms.map((br) => br.roomId),
+        })
+        .execute();
+    }
 
     if (
       dto.status === BookingStatus.CHECKED_OUT ||
