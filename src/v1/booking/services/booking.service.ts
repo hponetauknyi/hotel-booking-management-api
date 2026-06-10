@@ -9,7 +9,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { AuthenticatedUser } from 'src/v1/auth/interfaces/user.interface';
 import { RateOption } from 'src/v1/rate-option/entities/rate-option.entity';
-import { Room } from 'src/v1/room/entities/room.entity';
+import { Room, RoomStatus } from 'src/v1/room/entities/room.entity';
 import { DataSource, Repository } from 'typeorm';
 import { CreateBookingDto } from '../dto/create-booking.dto';
 import { FilterBookingDto } from '../dto/filter-booking.dto';
@@ -116,6 +116,16 @@ export class BookingService {
 
       await manager.save(BookingRoom, rooms);
 
+      // 5. Mark rooms as OCCUPIED
+      await manager
+        .createQueryBuilder()
+        .update(Room)
+        .set({ status: RoomStatus.OCCUPIED })
+        .where('id IN (:...roomIds)', {
+          roomIds: bookingRoomData.map((r) => r.roomId),
+        })
+        .execute();
+
       return savedBooking;
     });
 
@@ -183,6 +193,25 @@ export class BookingService {
 
     booking.status = dto.status;
     const savedBooking = await this.bookingRepository.save(booking);
+
+    if (
+      dto.status === BookingStatus.CHECKED_OUT ||
+      dto.status === BookingStatus.CANCELLED
+    ) {
+      // Mark rooms as AVAILABLE again
+      const bookingRooms = await this.bookingRoomRepository.find({
+        where: { bookingId: booking.id },
+      });
+
+      await this.dataSource
+        .createQueryBuilder()
+        .update(Room)
+        .set({ status: RoomStatus.AVAILABLE })
+        .where('id IN (:...roomIds)', {
+          roomIds: bookingRooms.map((br) => br.roomId),
+        })
+        .execute();
+    }
 
     this.logger.log(
       `Booking '${booking.bookingReference}' status changed to '${dto.status}' by '${currentUser.id}'`,
@@ -260,6 +289,30 @@ export class BookingService {
           );
         }
 
+        const isBookedForPeriod = await this.bookingRoomRepository
+          .createQueryBuilder('br')
+          .innerJoin('br.booking', 'booking')
+          .where('br.roomId = :roomId', { roomId: item.roomId })
+          .andWhere('booking.status != :cancelled', {
+            cancelled: BookingStatus.CANCELLED,
+          })
+          .andWhere('booking.status != :checkedout', {
+            checkedout: BookingStatus.CHECKED_OUT,
+          })
+          .andWhere('br.checkInDate < :checkOut', {
+            checkOut: item.checkOutDate,
+          })
+          .andWhere('br.checkOutDate > :checkIn', {
+            checkIn: item.checkInDate,
+          })
+          .getOne();
+
+        if (isBookedForPeriod) {
+          throw new BadRequestException(
+            `Room '${room.roomNumber}' is not available (status: ${room.status})`,
+          );
+        }
+
         const rateOption = await this.rateOptionRepository.findOne({
           where: { id: item.rateOptionId, roomTypeId: room.roomTypeId },
         });
@@ -298,6 +351,9 @@ export class BookingService {
         .where('br.roomId = :roomId', { roomId: item.roomId })
         .andWhere('booking.status != :cancelled', {
           cancelled: BookingStatus.CANCELLED,
+        })
+        .andWhere('booking.status != :checkedout', {
+          checkedout: BookingStatus.CHECKED_OUT,
         })
         .andWhere('br.checkInDate < :checkOut', {
           checkOut: item.checkOutDate,

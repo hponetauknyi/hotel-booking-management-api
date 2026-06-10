@@ -12,6 +12,13 @@ import {
 } from 'typeorm';
 import { RoomType } from './room-type.entity';
 
+export enum RoomStatus {
+  AVAILABLE = 'AVAILABLE',
+  OCCUPIED = 'OCCUPIED',
+  MAINTENANCE = 'MAINTENANCE',
+  OUT_OF_SERVICE = 'OUT_OF_SERVICE',
+}
+
 @Entity('rooms')
 @Index(['hotelId', 'roomNumber'], { unique: true })
 export class Room extends BaseEntity {
@@ -26,6 +33,9 @@ export class Room extends BaseEntity {
 
   @Column({ type: 'int' })
   floorNumber!: number;
+
+  @Column({ type: 'enum', enum: RoomStatus })
+  status!: RoomStatus;
 
   @ManyToOne(() => Hotel, (hotel) => hotel.rooms, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'hotelId' })

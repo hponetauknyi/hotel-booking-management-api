@@ -1,13 +1,31 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsNumber, IsOptional, IsUUID, Max, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsUUID,
+  Max,
+  Min,
+} from 'class-validator';
 import { PaginationFilterDto } from 'src/common/dto/pagination-filter.dto';
+import { RoomStatus } from '../entities/room.entity';
 
 export class FilterRoomDto extends PaginationFilterDto {
   @IsOptional()
   @IsUUID('4', { message: 'Room type ID must be a valid UUID' })
   @ApiPropertyOptional({ description: 'Filter by room type ID' })
   roomTypeId?: string;
+
+  @IsOptional()
+  @IsEnum(RoomStatus, {
+    message: `Status must be one of: ${Object.values(RoomStatus).join(', ')}`,
+  })
+  @ApiPropertyOptional({
+    enum: RoomStatus,
+    description: 'Filter by room status',
+  })
+  status?: RoomStatus;
 
   @IsOptional()
   @Type(() => Number)
