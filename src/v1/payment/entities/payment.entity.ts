@@ -18,7 +18,7 @@ export enum PaymentStatus {
 }
 
 @Entity('payments')
-export class PaymentEntity extends BaseEntity {
+export class Payment extends BaseEntity {
   @Column({ type: 'uuid' })
   bookingId!: string;
 

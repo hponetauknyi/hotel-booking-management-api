@@ -1,5 +1,5 @@
 import { BaseEntity } from 'src/common/entities/base.entity';
-import { PaymentEntity } from 'src/v1/payment/entities/payment.entity';
+import { Payment } from 'src/v1/payment/entities/payment.entity';
 import { User } from 'src/v1/user/entities/user.entity';
 import {
   Column,
@@ -48,6 +48,6 @@ export class Booking extends BaseEntity {
   @OneToMany(() => BookingRoom, (bookingRoom) => bookingRoom.booking)
   bookingRooms!: BookingRoom[];
 
-  @OneToMany(() => PaymentEntity, (payment) => payment.booking)
-  payments!: Relation<PaymentEntity[]>;
+  @OneToMany(() => Payment, (payment) => payment.booking)
+  payments!: Relation<Payment[]>;
 }
