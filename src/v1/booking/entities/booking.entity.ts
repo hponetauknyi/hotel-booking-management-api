@@ -1,4 +1,5 @@
 import { BaseEntity } from 'src/common/entities/base.entity';
+import { Currency } from 'src/common/enums/currency.enum';
 import { Payment } from 'src/v1/payment/entities/payment.entity';
 import { User } from 'src/v1/user/entities/user.entity';
 import {
@@ -34,6 +35,9 @@ export class Booking extends BaseEntity {
 
   @Column({ type: 'decimal', precision: 12, scale: 2 })
   totalPrice!: string;
+
+  @Column({ type: 'enum', enum: Currency, default: Currency.USD })
+  currency!: Currency;
 
   @Column({ type: 'int' })
   totalGuest!: number;

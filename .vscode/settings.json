@@ -8,5 +8,6 @@
     "source.fixAll.eslint": "explicit"
   },
   "eslint.validate": ["typescript", "javascript"],
-  "prettier.requireConfig": true
+  "prettier.requireConfig": true,
+  "material-icon-theme.activeIconPack": "nest"
 }

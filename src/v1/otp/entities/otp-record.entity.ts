@@ -1,7 +1,7 @@
-import { Entity, Column, ManyToOne, JoinColumn, Relation } from 'typeorm';
-import { User } from 'src/v1/user/entities/user.entity';
-import { Admin } from 'src/v1/admin/entities/admin.entity';
 import { AuditEntity } from 'src/common/entities/audit.entity';
+import { Admin } from 'src/v1/admin/entities/admin.entity';
+import { User } from 'src/v1/user/entities/user.entity';
+import { Column, Entity, JoinColumn, ManyToOne, Relation } from 'typeorm';
 
 export enum OtpStatus {
   PENDING = 'PENDING',
@@ -29,7 +29,7 @@ export class OtpRecord extends AuditEntity {
 
   @ManyToOne(() => Admin, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'adminId' })
-  admin!: Admin;
+  admin!: Relation<Admin>;
 
   @Column({ type: 'enum', enum: OtpStatus, default: OtpStatus.PENDING })
   status!: OtpStatus;

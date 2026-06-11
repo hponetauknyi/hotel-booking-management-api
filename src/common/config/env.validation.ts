@@ -59,4 +59,8 @@ export const envValidationSchema = Joi.object({
 
   // Set to true to skip real SMS calls outside the default development mock
   SMS_MOCK_ENABLED: Joi.boolean().default(false),
+
+  // Stripe
+  STRIPE_SECRET_KEY: Joi.string().required(),
+  STRIPE_WEBHOOK_SECRET: Joi.string().required(),
 }).options({ allowUnknown: true });

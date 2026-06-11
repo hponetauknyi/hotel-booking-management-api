@@ -11,7 +11,8 @@ import {
   Min,
   ValidateIf,
 } from 'class-validator';
-import { CancellationPolicy, Currency } from '../entities/rate-option.entity';
+import { Currency } from 'src/common/enums/currency.enum';
+import { CancellationPolicy } from '../entities/rate-option.entity';
 
 const DEADLINE_REQUIRED_POLICIES = [
   CancellationPolicy.FREE_CANCELLATION_UNTIL_DEADLINE,

@@ -1,33 +1,34 @@
-import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { BullModule } from '@nestjs/bullmq';
+import { CacheModule } from '@nestjs/cache-manager';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { JwtAuthGuard } from './v1/auth/guards/jwt-auth.guard';
-import { envValidationSchema } from './common/config/env.validation';
-import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
-import { BullModule } from '@nestjs/bullmq';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { redisStore } from 'cache-manager-redis-store';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UserModule } from './v1/user/user.module';
+import { CommonModule } from './common/common.module';
+import { envValidationSchema } from './common/config/env.validation';
+import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
+import dataSource from './data-source';
+import { HealthModule } from './health/health.module';
+import { NotificationModule } from './notification/notification.module';
+import { AdminModule } from './v1/admin/admin.module';
 import { AuthModule } from './v1/auth/auth.module';
+import { JwtAuthGuard } from './v1/auth/guards/jwt-auth.guard';
+import { BookingModule } from './v1/booking/booking.module';
+import { HotelModule } from './v1/hotel/hotel.module';
 import { ActivityLogModule } from './v1/log/activity-log.module';
 import { ActivityLogInterceptor } from './v1/log/interceptors/activity-log.interceptor';
-import { SettingModule } from './v1/setting/setting.module';
-import { AdminModule } from './v1/admin/admin.module';
-import { CommonModule } from './common/common.module';
-import dataSource from './data-source';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import { ScheduleModule } from '@nestjs/schedule';
-import { EventEmitterModule } from '@nestjs/event-emitter';
-import { CacheModule } from '@nestjs/cache-manager';
-import { redisStore } from 'cache-manager-redis-store';
-import { NotificationModule } from './notification/notification.module';
-import { HealthModule } from './health/health.module';
-import { HotelModule } from './v1/hotel/hotel.module';
-import { BookingModule } from './v1/booking/booking.module';
-import { RoomModule } from './v1/room/room.module';
-import { RateOptionModule } from './v1/rate-option/rate-option.module';
 import { PaymentModule } from './v1/payment/payment.module';
+import { RateOptionModule } from './v1/rate-option/rate-option.module';
+import { RoomModule } from './v1/room/room.module';
+import { SettingModule } from './v1/setting/setting.module';
+import { StripeModule } from './v1/stripe/stripe.module';
+import { UserModule } from './v1/user/user.module';
 
 @Module({
   imports: [
@@ -87,6 +88,7 @@ import { PaymentModule } from './v1/payment/payment.module';
     RoomModule,
     RateOptionModule,
     PaymentModule,
+    StripeModule,
   ],
   controllers: [AppController],
   providers: [

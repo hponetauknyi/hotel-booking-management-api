@@ -88,6 +88,9 @@ export class AuthSeeder {
       // Own bookings — create + read + update (for cancellation); no delete
       [PermissionModule.BOOKINGS]: READ_WRITE,
       [PermissionModule.BOOKING_LIST]: READ_ONLY,
+      // Own payments — create (initiate payment) + read; no update/delete
+      [PermissionModule.PAYMENTS]: [ActionType.CREATE, ActionType.READ],
+      [PermissionModule.PAYMENT_LIST]: READ_ONLY,
       // Own profile — read + update; no create/delete (account lifecycle is separate)
       [PermissionModule.PROFILE]: [ActionType.READ, ActionType.UPDATE],
     };
@@ -185,6 +188,13 @@ export class AuthSeeder {
         code: PermissionModule.BOOKINGS,
         children: [
           { name: 'Booking List', code: PermissionModule.BOOKING_LIST },
+        ],
+      },
+      {
+        name: 'Payments',
+        code: PermissionModule.PAYMENTS,
+        children: [
+          { name: 'Payment List', code: PermissionModule.PAYMENT_LIST },
         ],
       },
       {

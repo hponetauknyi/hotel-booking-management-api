@@ -17,6 +17,8 @@ import { PatchBookingStatusDto } from '../dto/patch-booking-status.dto';
 import { BookingRoom } from '../entities/booking-room.entity';
 import { Booking, BookingStatus } from '../entities/booking.entity';
 
+// CONFIRMED is intentionally absent from PENDING transitions in both maps.
+// It is only reachable via the payment flow (Stripe webhook or admin cash confirm).
 const CUSTOMER_ALLOWED_TRANSITIONS: Partial<
   Record<BookingStatus, BookingStatus[]>
 > = {
@@ -26,11 +28,14 @@ const CUSTOMER_ALLOWED_TRANSITIONS: Partial<
 
 const ADMIN_ONLY_TRANSITIONS: Partial<Record<BookingStatus, BookingStatus[]>> =
   {
-    [BookingStatus.PENDING]: [BookingStatus.CONFIRMED, BookingStatus.CANCELLED],
+    // Admins can cancel a pending booking, but NOT manually confirm it
+    [BookingStatus.PENDING]: [BookingStatus.CANCELLED],
+
     [BookingStatus.CONFIRMED]: [
       BookingStatus.CHECKED_IN,
       BookingStatus.CANCELLED,
     ],
+
     [BookingStatus.CHECKED_IN]: [BookingStatus.CHECKED_OUT],
   };
 
@@ -61,10 +66,8 @@ export class BookingService {
     dto: CreateBookingDto,
     currentUser: AuthenticatedUser,
   ): Promise<Booking> {
-    // 1. Validate all dates and collect room/rate data
     const roomItems = await this.validateAndPrepareRooms(dto);
 
-    // 2. Check double-booking for every requested room in a single query
     await this.assertNoDoubleBooking(
       dto.rooms.map((r) => ({
         roomId: r.roomId,
@@ -73,7 +76,6 @@ export class BookingService {
       })),
     );
 
-    // 3. Calculate totals
     let totalPrice = 0;
     let totalGuest = 0;
 
@@ -96,7 +98,6 @@ export class BookingService {
       };
     });
 
-    // 4. Persist inside a transaction
     const booking = await this.dataSource.transaction(async (manager) => {
       const bookingEntity = manager.create(Booking, {
         userId: currentUser.id,
@@ -115,26 +116,6 @@ export class BookingService {
       );
 
       await manager.save(BookingRoom, rooms);
-
-      // 5. Mark rooms as OCCUPIED
-      await manager
-        .createQueryBuilder()
-        .update(Room)
-        .set({ status: RoomStatus.OCCUPIED })
-        .where('id IN (:...roomIds)', {
-          roomIds: bookingRoomData.map((r) => r.roomId),
-        })
-        .execute();
-
-      // 5. Mark rooms as OCCUPIED
-      await manager
-        .createQueryBuilder()
-        .update(Room)
-        .set({ status: RoomStatus.OCCUPIED })
-        .where('id IN (:...roomIds)', {
-          roomIds: bookingRoomData.map((r) => r.roomId),
-        })
-        .execute();
 
       return savedBooking;
     });
@@ -176,7 +157,6 @@ export class BookingService {
     }
 
     const [items, total] = await qb.getManyAndCount();
-
     return { items, total };
   }
 
@@ -204,11 +184,8 @@ export class BookingService {
     booking.status = dto.status;
     const savedBooking = await this.bookingRepository.save(booking);
 
-    if (
-      dto.status === BookingStatus.CHECKED_OUT ||
-      dto.status === BookingStatus.CANCELLED
-    ) {
-      // Mark rooms as AVAILABLE again
+    // When a guest checks in, mark rooms as OCCUPIED
+    if (dto.status === BookingStatus.CHECKED_IN) {
       const bookingRooms = await this.bookingRoomRepository.find({
         where: { bookingId: booking.id },
       });
@@ -216,18 +193,18 @@ export class BookingService {
       await this.dataSource
         .createQueryBuilder()
         .update(Room)
-        .set({ status: RoomStatus.AVAILABLE })
+        .set({ status: RoomStatus.OCCUPIED })
         .where('id IN (:...roomIds)', {
           roomIds: bookingRooms.map((br) => br.roomId),
         })
         .execute();
     }
 
+    // When a booking ends (checked out) or is cancelled, free the rooms
     if (
       dto.status === BookingStatus.CHECKED_OUT ||
       dto.status === BookingStatus.CANCELLED
     ) {
-      // Mark rooms as AVAILABLE again
       const bookingRooms = await this.bookingRoomRepository.find({
         where: { bookingId: booking.id },
       });
@@ -265,6 +242,7 @@ export class BookingService {
         'bookingRooms.rateOption.rateOptionBenefits',
         'bookingRooms.rateOption.rateOptionBenefits.benefit',
         'user',
+        'payments',
       ],
     });
 
@@ -279,7 +257,6 @@ export class BookingService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Catch duplicate rooms within the request itself
     const requestedRoomIds = dto.rooms.map((r) => r.roomId);
     const duplicateRoomIds = requestedRoomIds.filter(
       (id, idx) => requestedRoomIds.indexOf(id) !== idx,
@@ -318,15 +295,16 @@ export class BookingService {
           );
         }
 
+        // Date-range availability check (ignores CANCELLED and CHECKED_OUT)
         const isBookedForPeriod = await this.bookingRoomRepository
           .createQueryBuilder('br')
           .innerJoin('br.booking', 'booking')
           .where('br.roomId = :roomId', { roomId: item.roomId })
-          .andWhere('booking.status != :cancelled', {
-            cancelled: BookingStatus.CANCELLED,
-          })
-          .andWhere('booking.status != :checkedout', {
-            checkedout: BookingStatus.CHECKED_OUT,
+          .andWhere('booking.status NOT IN (:...terminalStatuses)', {
+            terminalStatuses: [
+              BookingStatus.CANCELLED,
+              BookingStatus.CHECKED_OUT,
+            ],
           })
           .andWhere('br.checkInDate < :checkOut', {
             checkOut: item.checkOutDate,
@@ -337,8 +315,8 @@ export class BookingService {
           .getOne();
 
         if (isBookedForPeriod) {
-          throw new BadRequestException(
-            `Room '${room.roomNumber}' is not available (status: ${room.status})`,
+          throw new ConflictException(
+            `Room '${room.roomNumber}' is already booked for the requested dates`,
           );
         }
 
@@ -378,11 +356,11 @@ export class BookingService {
         .createQueryBuilder('br')
         .innerJoin('br.booking', 'booking')
         .where('br.roomId = :roomId', { roomId: item.roomId })
-        .andWhere('booking.status != :cancelled', {
-          cancelled: BookingStatus.CANCELLED,
-        })
-        .andWhere('booking.status != :checkedout', {
-          checkedout: BookingStatus.CHECKED_OUT,
+        .andWhere('booking.status NOT IN (:...terminalStatuses)', {
+          terminalStatuses: [
+            BookingStatus.CANCELLED,
+            BookingStatus.CHECKED_OUT,
+          ],
         })
         .andWhere('br.checkInDate < :checkOut', {
           checkOut: item.checkOutDate,
@@ -413,10 +391,15 @@ export class BookingService {
 
     const adminAllowed = ADMIN_ONLY_TRANSITIONS[current] ?? [];
     const customerAllowed = CUSTOMER_ALLOWED_TRANSITIONS[current] ?? [];
-
     const allAllowed = isAdmin ? adminAllowed : customerAllowed;
 
     if (!allAllowed.includes(next)) {
+      // Surface a specific message if someone tries to manually confirm
+      if (next === BookingStatus.CONFIRMED) {
+        throw new ForbiddenException(
+          `Bookings are confirmed automatically upon payment. Manual confirmation is not permitted.`,
+        );
+      }
       throw new ForbiddenException(
         `Cannot transition booking from '${current}' to '${next}'`,
       );

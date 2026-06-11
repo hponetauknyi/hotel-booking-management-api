@@ -1,5 +1,7 @@
+import { BaseEntity } from 'src/common/entities/base.entity';
+import { Currency } from 'src/common/enums/currency.enum';
+import { BookingRoom } from 'src/v1/booking/entities/booking-room.entity';
 import { RoomType } from 'src/v1/room/entities/room-type.entity';
-import { RateOptionBenefit } from './rate-option-benefit.entity';
 import {
   Column,
   Entity,
@@ -8,8 +10,7 @@ import {
   OneToMany,
   Relation,
 } from 'typeorm';
-import { BookingRoom } from 'src/v1/booking/entities/booking-room.entity';
-import { BaseEntity } from 'src/common/entities/base.entity';
+import { RateOptionBenefit } from './rate-option-benefit.entity';
 
 export enum CancellationPolicy {
   FREE_CANCELLATION = 'FREE_CANCELLATION',
@@ -17,15 +18,6 @@ export enum CancellationPolicy {
   NON_REFUNDABLE = 'NON_REFUNDABLE',
   PARTIAL_REFUND_WITHIN_WINDOW = 'PARTIAL_REFUND_WITHIN_WINDOW',
   FEE_BASED_CANCELLATION = 'FEE_BASED_CANCELLATION',
-}
-
-export enum Currency {
-  USD = 'USD',
-  EUR = 'EUR',
-  GBP = 'GBP',
-  SGD = 'SGD',
-  THB = 'THB',
-  MMK = 'MMK',
 }
 
 @Entity('rate_options')
@@ -42,7 +34,7 @@ export class RateOption extends BaseEntity {
   @Column({ type: 'decimal', precision: 12, scale: 2 })
   pricePerNight!: string;
 
-  @Column({ type: 'enum', enum: Currency })
+  @Column({ type: 'enum', enum: Currency, default: Currency.USD })
   currency!: Currency;
 
   @Column({ default: false })

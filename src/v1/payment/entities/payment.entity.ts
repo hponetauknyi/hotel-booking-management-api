@@ -1,6 +1,6 @@
 import { BaseEntity } from 'src/common/entities/base.entity';
+import { Currency } from 'src/common/enums/currency.enum';
 import { Booking } from 'src/v1/booking/entities/booking.entity';
-import { Currency } from 'src/v1/rate-option/entities/rate-option.entity';
 import { User } from 'src/v1/user/entities/user.entity';
 import { Column, Entity, JoinColumn, ManyToOne, Relation } from 'typeorm';
 
@@ -47,6 +47,7 @@ export class Payment extends BaseEntity {
   @Column({
     type: 'enum',
     enum: Currency,
+    default: Currency.USD,
   })
   currency!: Currency;
 

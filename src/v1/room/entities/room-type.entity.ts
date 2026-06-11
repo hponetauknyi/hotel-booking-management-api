@@ -1,6 +1,6 @@
+import { BaseEntity } from 'src/common/entities/base.entity';
 import { Hotel } from 'src/v1/hotel/entities/hotel.entity';
-import { Room } from './room.entity';
-import { RoomTypeCharacteristic } from './room-type-characteristic.entity';
+import { RateOption } from 'src/v1/rate-option/entities/rate-option.entity';
 import {
   Column,
   Entity,
@@ -9,8 +9,8 @@ import {
   OneToMany,
   Relation,
 } from 'typeorm';
-import { RateOption } from 'src/v1/rate-option/entities/rate-option.entity';
-import { BaseEntity } from 'src/common/entities/base.entity';
+import { RoomTypeCharacteristic } from './room-type-characteristic.entity';
+import { Room } from './room.entity';
 
 @Entity('room_types')
 export class RoomType extends BaseEntity {
@@ -40,7 +40,7 @@ export class RoomType extends BaseEntity {
   rooms!: Room[];
 
   @OneToMany(() => RateOption, (rateOption) => rateOption.roomType)
-  rateOptions!: RateOption[];
+  rateOptions!: Relation<RateOption[]>;
 
   @OneToMany(
     () => RoomTypeCharacteristic,

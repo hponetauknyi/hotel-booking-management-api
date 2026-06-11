@@ -1,13 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Currency } from 'src/common/enums/currency.enum';
 import { Hotel } from 'src/v1/hotel/entities/hotel.entity';
 import { RoomType } from 'src/v1/room/entities/room-type.entity';
-import {
-  CancellationPolicy,
-  Currency,
-  RateOption,
-} from '../entities/rate-option.entity';
+import { Repository } from 'typeorm';
+import { CancellationPolicy, RateOption } from '../entities/rate-option.entity';
 
 interface RateOptionSeed {
   hotelName: string;

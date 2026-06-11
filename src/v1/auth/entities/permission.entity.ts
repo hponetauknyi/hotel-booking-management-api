@@ -47,6 +47,9 @@ export enum PermissionModule {
   BOOKINGS = 'BOOKINGS',
   BOOKING_LIST = 'BOOKING_LIST',
 
+  PAYMENTS = 'PAYMENTS',
+  PAYMENT_LIST = 'PAYMENT_LIST',
+
   PROFILE = 'PROFILE',
 }
 

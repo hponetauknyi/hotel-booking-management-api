@@ -12,16 +12,17 @@ import helmet from 'helmet';
 import { WinstonModule } from 'nest-winston';
 import { AppModule } from './app.module';
 import { winstonConfig } from './common/config/logger.config';
+import { SwaggerConfig } from './common/config/swagger.config';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { DatabaseExceptionFilter } from './common/filters/database-exception.filter';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ThrottlerExceptionFilter } from './common/filters/throttler-exception.filter';
 import { TimeoutInterceptor } from './common/interceptors/timeout.interceptor';
-import { SwaggerConfig } from './common/config/swagger.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: WinstonModule.createLogger(winstonConfig),
+    rawBody: true,
   });
 
   const configService = app.get(ConfigService);

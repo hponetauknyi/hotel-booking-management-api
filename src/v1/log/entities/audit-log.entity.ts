@@ -1,13 +1,14 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  ManyToOne,
-  JoinColumn,
-  Index,
-} from 'typeorm';
 import { Admin } from 'src/v1/admin/entities/admin.entity';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  Relation,
+} from 'typeorm';
 import { LogAction } from '../constants/log-action.enum';
 import { LogStatus } from '../constants/log-status.enum';
 
@@ -24,7 +25,7 @@ export class AuditLog {
 
   @ManyToOne(() => Admin, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'adminId' })
-  admin!: Admin;
+  admin!: Relation<Admin>;
 
   @Column({ type: 'enum', enum: LogAction })
   action!: LogAction;

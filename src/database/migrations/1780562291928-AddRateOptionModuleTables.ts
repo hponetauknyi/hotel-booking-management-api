@@ -14,7 +14,7 @@ export class AddRateOptionModuleTables1780562291928 implements MigrationInterfac
       `CREATE UNIQUE INDEX "IDX_2a0ce378f98d641f92cec16fee" ON "rate_option_benefits" ("rateOptionId", "benefitId") `,
     );
     await queryRunner.query(
-      `CREATE TYPE "public"."rate_options_currency_enum" AS ENUM('USD', 'EUR', 'GBP', 'SGD', 'THB', 'MMK')`,
+      `CREATE TYPE "public"."rate_options_currency_enum" AS ENUM('USD', 'EUR', 'GBP', 'SGD', 'THB')`,
     );
     await queryRunner.query(
       `CREATE TYPE "public"."rate_options_cancellationpolicy_enum" AS ENUM('FREE_CANCELLATION', 'FREE_CANCELLATION_UNTIL_DEADLINE', 'NON_REFUNDABLE', 'PARTIAL_REFUND_WITHIN_WINDOW', 'FEE_BASED_CANCELLATION')`,

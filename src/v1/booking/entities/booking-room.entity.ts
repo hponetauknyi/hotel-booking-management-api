@@ -1,6 +1,5 @@
 import { RateOption } from 'src/v1/rate-option/entities/rate-option.entity';
 import { Room } from 'src/v1/room/entities/room.entity';
-import { Booking } from './booking.entity';
 import {
   Column,
   CreateDateColumn,
@@ -10,6 +9,7 @@ import {
   PrimaryGeneratedColumn,
   Relation,
 } from 'typeorm';
+import { Booking } from './booking.entity';
 
 @Entity('booking_rooms')
 export class BookingRoom {
@@ -57,5 +57,5 @@ export class BookingRoom {
     onDelete: 'RESTRICT',
   })
   @JoinColumn({ name: 'rateOptionId' })
-  rateOption!: RateOption;
+  rateOption!: Relation<RateOption>;
 }

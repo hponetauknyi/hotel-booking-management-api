@@ -1,7 +1,7 @@
-import { Entity, Column, ManyToOne, JoinColumn, Relation } from 'typeorm';
-import { User } from 'src/v1/user/entities/user.entity';
-import { Admin } from 'src/v1/admin/entities/admin.entity';
 import { AuditEntity } from 'src/common/entities/audit.entity';
+import { Admin } from 'src/v1/admin/entities/admin.entity';
+import { User } from 'src/v1/user/entities/user.entity';
+import { Column, Entity, JoinColumn, ManyToOne, Relation } from 'typeorm';
 
 @Entity('refresh_tokens')
 export class RefreshToken extends AuditEntity {
@@ -24,7 +24,7 @@ export class RefreshToken extends AuditEntity {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'adminId' })
-  admin!: Admin;
+  admin!: Relation<Admin>;
 
   @Column({ type: 'timestamptz', nullable: true })
   expiresAt!: Date | null;
