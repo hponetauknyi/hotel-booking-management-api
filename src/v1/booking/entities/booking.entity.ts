@@ -1,6 +1,6 @@
-import { AuditEntity } from 'src/common/entities/audit.entity';
+import { BaseEntity } from 'src/common/entities/base.entity';
+import { PaymentEntity } from 'src/v1/payment/entities/payment.entity';
 import { User } from 'src/v1/user/entities/user.entity';
-import { BookingRoom } from './booking-room.entity';
 import {
   Column,
   Entity,
@@ -8,7 +8,9 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
+  Relation,
 } from 'typeorm';
+import { BookingRoom } from './booking-room.entity';
 
 export enum BookingStatus {
   PENDING = 'PENDING',
@@ -19,7 +21,7 @@ export enum BookingStatus {
 }
 
 @Entity('bookings')
-export class Booking extends AuditEntity {
+export class Booking extends BaseEntity {
   @Index({ unique: true })
   @Column()
   bookingReference!: string;
@@ -45,4 +47,7 @@ export class Booking extends AuditEntity {
 
   @OneToMany(() => BookingRoom, (bookingRoom) => bookingRoom.booking)
   bookingRooms!: BookingRoom[];
+
+  @OneToMany(() => PaymentEntity, (payment) => payment.booking)
+  payments!: Relation<PaymentEntity[]>;
 }
