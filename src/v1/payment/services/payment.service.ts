@@ -1,12 +1,16 @@
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
   InternalServerErrorException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Cache } from 'cache-manager';
 import { AuthenticatedUser } from 'src/v1/auth/interfaces/user.interface';
 import { Booking, BookingStatus } from 'src/v1/booking/entities/booking.entity';
 import { StripeService } from 'src/v1/stripe/stripe.service';
@@ -19,6 +23,21 @@ import {
   PaymentProvider,
   PaymentStatus,
 } from '../entities/payment.entity';
+
+const VALID_PAYMENT_SORT_FIELDS: (keyof Payment)[] = [
+  'createdAt',
+  'amount',
+  'status',
+];
+
+const paymentListKey = (
+  filter: FilterPaymentDto,
+  currentUser: AuthenticatedUser,
+): string => {
+  const stable = JSON.stringify(filter, Object.keys(filter).sort());
+
+  return `payments:list:${currentUser.subjectType}:${currentUser.id}:${stable}`;
+};
 
 const toStripeAmount = (decimalPrice: string): number =>
   Math.round(parseFloat(decimalPrice) * 100);
@@ -33,6 +52,10 @@ export class PaymentService {
     @InjectRepository(Booking)
     private readonly bookingRepository: Repository<Booking>,
     private readonly stripeService: StripeService,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
+
+    private readonly configService: ConfigService,
   ) {}
 
   async createPaymentIntent(
@@ -107,6 +130,7 @@ export class PaymentService {
     });
 
     await this.paymentRepository.save(payment);
+    await this.invalidatePaymentLists();
 
     this.logger.log(
       `PaymentIntent '${stripeIntentId}' created for booking '${booking.bookingReference}'`,
@@ -152,6 +176,7 @@ export class PaymentService {
 
     payment.status = PaymentStatus.COMPLETED;
     await this.paymentRepository.save(payment);
+    await this.invalidatePaymentLists();
 
     // Auto-confirm the booking — this is the ONLY path to CONFIRMED for online payments
     await this.bookingRepository.update(
@@ -178,6 +203,7 @@ export class PaymentService {
 
     payment.status = PaymentStatus.FAILED;
     await this.paymentRepository.save(payment);
+    await this.invalidatePaymentLists();
 
     this.logger.log(
       `Payment '${payment.id}' marked FAILED for PaymentIntent '${paymentIntentId}'`,
@@ -217,6 +243,7 @@ export class PaymentService {
     });
 
     await this.paymentRepository.save(payment);
+    await this.invalidatePaymentLists();
 
     await this.bookingRepository.update(
       { id: booking.id },
@@ -235,32 +262,48 @@ export class PaymentService {
     currentUser: AuthenticatedUser,
   ): Promise<{ items: Payment[]; total: number }> {
     const isAdmin = currentUser.subjectType === 'ADMIN';
+
+    const cacheKey = paymentListKey(filter, currentUser);
+
+    const cached = await this.cacheManager.get<{
+      items: Payment[];
+      total: number;
+    }>(cacheKey);
+
+    if (cached) {
+      this.logger.debug(`Cache hit: ${cacheKey}`);
+      return cached;
+    }
+
     const { page, limit, getAll } = filter;
     const skip = (page - 1) * limit;
 
-    const allowedSortFields: (keyof Payment)[] = [
-      'createdAt',
-      'amount',
-      'status',
-    ];
-    const sortField = allowedSortFields.includes(filter.sortBy as keyof Payment)
+    const sortField = VALID_PAYMENT_SORT_FIELDS.includes(
+      filter.sortBy as keyof Payment,
+    )
       ? (filter.sortBy as keyof Payment)
       : 'createdAt';
+
     const sortOrder = filter.sortOrder ?? 'DESC';
 
     const qb = this.paymentRepository
       .createQueryBuilder('payment')
       .orderBy(`payment.${sortField}`, sortOrder);
 
-    // Guests may only see their own payments
     if (!isAdmin) {
-      qb.andWhere('payment.userId = :userId', { userId: currentUser.id });
+      qb.andWhere('payment.userId = :userId', {
+        userId: currentUser.id,
+      });
     } else if (filter.userId) {
-      qb.andWhere('payment.userId = :userId', { userId: filter.userId });
+      qb.andWhere('payment.userId = :userId', {
+        userId: filter.userId,
+      });
     }
 
     if (filter.status) {
-      qb.andWhere('payment.status = :status', { status: filter.status });
+      qb.andWhere('payment.status = :status', {
+        status: filter.status,
+      });
     }
 
     if (filter.bookingId) {
@@ -274,7 +317,19 @@ export class PaymentService {
     }
 
     const [items, total] = await qb.getManyAndCount();
-    return { items, total };
+
+    const result = {
+      items,
+      total,
+    };
+
+    const ttl = this.configService.get<number>('CACHE_TTL') ?? 600_000;
+
+    await this.cacheManager.set(cacheKey, result, ttl);
+
+    await this.registerListKey(cacheKey);
+
+    return result;
   }
 
   async findOne(id: string, currentUser: AuthenticatedUser): Promise<Payment> {
@@ -290,5 +345,31 @@ export class PaymentService {
     }
 
     return payment;
+  }
+
+  private readonly LIST_REGISTRY_KEY = 'payments:list:__registry__';
+
+  private async registerListKey(key: string): Promise<void> {
+    const existing =
+      (await this.cacheManager.get<string[]>(this.LIST_REGISTRY_KEY)) ?? [];
+
+    if (!existing.includes(key)) {
+      await this.cacheManager.set(
+        this.LIST_REGISTRY_KEY,
+        [...existing, key],
+        this.configService.get<number>('CACHE_TTL') ?? 600_000,
+      );
+    }
+  }
+
+  private async invalidatePaymentLists(): Promise<void> {
+    const keys =
+      (await this.cacheManager.get<string[]>(this.LIST_REGISTRY_KEY)) ?? [];
+
+    await Promise.all(keys.map((k) => this.cacheManager.del(k)));
+
+    await this.cacheManager.del(this.LIST_REGISTRY_KEY);
+
+    this.logger.debug(`Invalidated ${keys.length} payment cache key(s)`);
   }
 }
