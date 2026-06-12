@@ -1,10 +1,14 @@
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import {
   ConflictException,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Cache } from 'cache-manager';
 import { Hotel } from 'src/v1/hotel/entities/hotel.entity';
 import {
   attachAuditLogMetadata,
@@ -18,6 +22,14 @@ import { UpdateRoomDto } from '../dto/update-room.dto';
 import { RoomType } from '../entities/room-type.entity';
 import { Room } from '../entities/room.entity';
 
+const roomListKey = (hotelId: string, filter: FilterRoomDto): string => {
+  const stable = JSON.stringify(filter, Object.keys(filter).sort());
+  return `rooms:list:${hotelId}:${stable}`;
+};
+
+const roomListRegistryKey = (hotelId: string): string =>
+  `rooms:list:${hotelId}:__registry__`;
+
 @Injectable()
 export class RoomService {
   private readonly logger = new Logger(RoomService.name);
@@ -30,6 +42,9 @@ export class RoomService {
     @InjectRepository(Hotel)
     private hotelRepository: Repository<Hotel>,
     private dataSource: DataSource,
+    @Inject(CACHE_MANAGER)
+    private cacheManager: Cache,
+    private readonly configService: ConfigService,
   ) {}
 
   async findAllByHotel(
@@ -37,6 +52,19 @@ export class RoomService {
     filterRoomDto: FilterRoomDto,
   ): Promise<{ data: Room[]; total: number; page: number; limit: number }> {
     await this.assertHotelExists(hotelId);
+
+    const cacheKey = roomListKey(hotelId, filterRoomDto);
+    const cached = await this.cacheManager.get<{
+      data: Room[];
+      total: number;
+      page: number;
+      limit: number;
+    }>(cacheKey);
+
+    if (cached) {
+      this.logger.debug(`Cache hit: ${cacheKey}`);
+      return cached;
+    }
 
     const { roomTypeId, status, minPrice, maxPrice, page, limit, getAll } =
       filterRoomDto;
@@ -84,12 +112,18 @@ export class RoomService {
 
     const [data, total] = await qb.getManyAndCount();
 
-    return {
+    const result = {
       data,
       total,
       page: getAll ? 1 : page,
       limit: getAll ? total : limit,
     };
+
+    const cacheTTL = this.configService.get<number>('CACHE_TTL') ?? 600_000;
+    await this.cacheManager.set(cacheKey, result, cacheTTL);
+    await this.registerListKey(hotelId, cacheKey);
+
+    return result;
   }
 
   async create(hotelId: string, createRoomDto: CreateRoomDto): Promise<Room> {
@@ -107,6 +141,8 @@ export class RoomService {
       `Room '${savedRoom.roomNumber}' created in hotel '${hotelId}'`,
     );
 
+    await this.invalidateRoomLists(hotelId);
+
     return savedRoom;
   }
 
@@ -118,7 +154,6 @@ export class RoomService {
 
     const { rooms: roomDtos } = bulkCreateRoomDto;
 
-    // Validate all roomTypeIds belong to this hotel
     const uniqueRoomTypeIds = [...new Set(roomDtos.map((r) => r.roomTypeId))];
     const validRoomTypes = await this.roomTypeRepository.find({
       where: { id: In(uniqueRoomTypeIds), hotelId },
@@ -133,7 +168,6 @@ export class RoomService {
       );
     }
 
-    // Check for duplicate room numbers within the request itself
     const requestedNumbers = roomDtos.map((r) => r.roomNumber);
     const duplicatesInRequest = requestedNumbers.filter(
       (num, idx) => requestedNumbers.indexOf(num) !== idx,
@@ -144,7 +178,6 @@ export class RoomService {
       );
     }
 
-    // Check for conflicts with existing rooms
     const existingRooms = await this.roomRepository.find({
       where: { hotelId, roomNumber: In(requestedNumbers) },
       select: ['roomNumber'],
@@ -165,6 +198,8 @@ export class RoomService {
     this.logger.log(
       `Bulk created ${savedRooms.length} room(s) in hotel '${hotelId}'`,
     );
+
+    await this.invalidateRoomLists(hotelId);
 
     return savedRooms;
   }
@@ -225,6 +260,8 @@ export class RoomService {
 
     this.logger.log(`Room '${roomId}' updated in hotel '${hotelId}'`);
 
+    await this.invalidateRoomLists(hotelId);
+
     return savedRoom;
   }
 
@@ -243,6 +280,27 @@ export class RoomService {
 
     await this.roomRepository.remove(room);
     this.logger.log(`Room '${roomId}' deleted from hotel '${hotelId}'`);
+
+    await this.invalidateRoomLists(hotelId);
+  }
+
+  private async registerListKey(hotelId: string, key: string): Promise<void> {
+    const regKey = roomListRegistryKey(hotelId);
+    const existing = (await this.cacheManager.get<string[]>(regKey)) ?? [];
+    const cacheTTL = this.configService.get<number>('CACHE_TTL') ?? 600_000;
+    if (!existing.includes(key)) {
+      await this.cacheManager.set(regKey, [...existing, key], cacheTTL);
+    }
+  }
+
+  private async invalidateRoomLists(hotelId: string): Promise<void> {
+    const regKey = roomListRegistryKey(hotelId);
+    const keys = (await this.cacheManager.get<string[]>(regKey)) ?? [];
+    await Promise.all(keys.map((k) => this.cacheManager.del(k)));
+    await this.cacheManager.del(regKey);
+    this.logger.debug(
+      `Invalidated ${keys.length} room list cache key(s) for hotel '${hotelId}'`,
+    );
   }
 
   private async assertHotelExists(hotelId: string): Promise<void> {

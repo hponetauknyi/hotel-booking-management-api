@@ -1,10 +1,14 @@
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import {
   ForbiddenException,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Cache } from 'cache-manager';
 import { AuthenticatedUser } from 'src/v1/auth/interfaces/user.interface';
 import {
   attachAuditLogMetadata,
@@ -24,6 +28,20 @@ const VALID_SORT_FIELDS: (keyof Hotel)[] = [
   'isActive',
 ];
 
+// Generate a stable cache key for hotel list
+const hotelListKey = (filter: FilterHotelDto, isAdmin: boolean): string => {
+  const stable = JSON.stringify(filter, Object.keys(filter).sort());
+  return `hotels:list:${isAdmin ? 'admin' : 'guest'}:${stable}`;
+};
+
+const hotelDetailKey = (id: string, isAdmin: boolean): string =>
+  `hotels:detail:${isAdmin ? 'admin' : 'guest'}:${id}`;
+
+const hotelDetailKeys = (id: string): string[] => [
+  hotelDetailKey(id, true),
+  hotelDetailKey(id, false),
+];
+
 @Injectable()
 export class HotelService {
   private readonly logger = new Logger(HotelService.name);
@@ -31,6 +49,9 @@ export class HotelService {
   constructor(
     @InjectRepository(Hotel)
     private hotelRepository: Repository<Hotel>,
+    @Inject(CACHE_MANAGER)
+    private cacheManager: Cache,
+    private readonly configService: ConfigService,
   ) {}
 
   async create(
@@ -47,6 +68,8 @@ export class HotelService {
     const savedHotel = await this.hotelRepository.save(hotel);
     this.logger.log(`Hotel created with ID: ${savedHotel.id}`);
 
+    await this.invalidateHotelLists();
+
     return savedHotel;
   }
 
@@ -55,6 +78,16 @@ export class HotelService {
     const skip = (page - 1) * limit;
 
     const isAdmin = currentUser?.subjectType === 'ADMIN';
+    const cacheKey = hotelListKey(filter, isAdmin);
+
+    const cached = await this.cacheManager.get<{
+      items: Hotel[];
+      total: number;
+    }>(cacheKey);
+    if (cached) {
+      this.logger.debug(`Cache hit: ${cacheKey}`);
+      return cached;
+    }
 
     const qb = this.hotelRepository.createQueryBuilder('hotel').distinct(true);
 
@@ -151,12 +184,24 @@ export class HotelService {
     }
 
     const [items, total] = await qb.getManyAndCount();
+    const result = { items, total };
 
-    return { items, total };
+    const cacheTTL = this.configService.get<number>('CACHE_TTL') ?? 600_000;
+    await this.cacheManager.set(cacheKey, result, cacheTTL);
+    await this.registerListKey(cacheKey);
+    return result;
   }
 
   async findOne(id: string, currentUser?: AuthenticatedUser): Promise<Hotel> {
     const isAdmin = currentUser?.subjectType === 'ADMIN';
+    const cacheKey = hotelDetailKey(id, isAdmin);
+
+    const cached = await this.cacheManager.get<Hotel>(cacheKey);
+    if (cached) {
+      this.logger.debug(`Cache hit: ${cacheKey}`);
+      return cached;
+    }
+
     const hotel = await this.hotelRepository.findOne({
       where: isAdmin ? { id } : { id, isActive: true },
       relations: [
@@ -172,6 +217,9 @@ export class HotelService {
     if (!hotel) {
       throw new NotFoundException(`Hotel with ID '${id}' not found`);
     }
+
+    const cacheTTL = this.configService.get<number>('CACHE_TTL') ?? 600_000;
+    await this.cacheManager.set(cacheKey, hotel, cacheTTL);
 
     return hotel;
   }
@@ -207,6 +255,11 @@ export class HotelService {
 
     this.logger.log(`Hotel updated with ID: ${savedHotel.id}`);
 
+    await Promise.all([
+      ...hotelDetailKeys(id).map((k) => this.cacheManager.del(k)),
+      this.invalidateHotelLists(),
+    ]);
+
     return savedHotel;
   }
 
@@ -221,6 +274,33 @@ export class HotelService {
 
     await this.hotelRepository.remove(existingHotel);
     this.logger.log(`Hotel with ID '${id}' has been successfully deleted`);
+
+    await Promise.all([
+      ...hotelDetailKeys(id).map((k) => this.cacheManager.del(k)),
+      this.invalidateHotelLists(),
+    ]);
+  }
+
+  private readonly LIST_REGISTRY_KEY = 'hotels:list:__registry__';
+
+  private async registerListKey(key: string): Promise<void> {
+    const existing =
+      (await this.cacheManager.get<string[]>(this.LIST_REGISTRY_KEY)) ?? [];
+    if (!existing.includes(key)) {
+      await this.cacheManager.set(
+        this.LIST_REGISTRY_KEY,
+        [...existing, key],
+        this.configService.get<number>('CACHE_TTL') ?? 600_000,
+      );
+    }
+  }
+
+  private async invalidateHotelLists(): Promise<void> {
+    const keys =
+      (await this.cacheManager.get<string[]>(this.LIST_REGISTRY_KEY)) ?? [];
+    await Promise.all(keys.map((k) => this.cacheManager.del(k)));
+    await this.cacheManager.del(this.LIST_REGISTRY_KEY);
+    this.logger.debug(`Invalidated ${keys.length} hotel list cache key(s)`);
   }
 
   private assertAdmin(currentUser: AuthenticatedUser): void {
