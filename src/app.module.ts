@@ -59,6 +59,7 @@ import { UserModule } from './v1/user/user.module';
       validationSchema: envValidationSchema,
       validationOptions: {
         abortEarly: false,
+        convert: true,
       },
     }),
     CacheModule.registerAsync({

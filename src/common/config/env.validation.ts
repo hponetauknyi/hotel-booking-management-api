@@ -65,5 +65,5 @@ export const envValidationSchema = Joi.object({
   STRIPE_WEBHOOK_SECRET: Joi.string().required(),
 
   // Cache
-  CACHE_TTL: Joi.number().default(600_000),
+  CACHE_TTL: Joi.number().default(600_000).required(),
 }).options({ allowUnknown: true });
